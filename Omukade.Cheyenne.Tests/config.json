@@ -1,0 +1,9 @@
+{
+  "carddata-directory": "R:\\PTCGL-CardDefinitions\\",
+  "ws-port": 10850,
+  "cardsource-overrides-enable": false,
+  "cardsource-overrides-directory": "R:\\",
+  "discord-error-webhook-enable": false,
+  "discord-error-webhook-url": "FOO",
+  "autopar-search-folder": null
+}

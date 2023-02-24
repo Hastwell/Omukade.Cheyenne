@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Omukade.Cheyenne.Tests": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:1027;http://localhost:1028"
+    }
+  }
+}
