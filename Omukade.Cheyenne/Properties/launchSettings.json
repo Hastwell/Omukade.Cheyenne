@@ -2,7 +2,7 @@
   "profiles": {
     "Omukade.Cheyenne": {
       "commandName": "Project",
-      "workingDirectory": "C:\\Users\\tutack\\source\\repos\\Intermapper-V\\Omukade.Cheyenne\\bin\\Debug\\net6.0",
+      "workingDirectory": "C:\\Users\\tutack\\source\\repos\\Omukade.Cheyenne\\bin\\Debug\\net6.0",
       "applicationUrl": "https://localhost:1118;http://localhost:1119"
     }
   }

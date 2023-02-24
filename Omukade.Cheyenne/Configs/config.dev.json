@@ -1,6 +1,6 @@
 {
   "carddata-directory": "R:\\PTCGL-CardDefinitions\\",
-  "imex-port": 18181,
+  "imex-port": 10851,
   "cardsource-overrides-enable": false,
   "cardsource-overrides-directory": "R:\\",
   "discord-error-webhook-enable":  false,
