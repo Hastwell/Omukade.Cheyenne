@@ -49,8 +49,8 @@
 
   <ItemGroup>
     <PackageReference Include="Lib.Harmony" Version="2.2.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="SharpZipLib" Version="1.3.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="SharpZipLib" Version="1.4.2" />
     <PackageReference Include="Spectre.Console" Version="0.45.0" />
   </ItemGroup>
 
@@ -60,23 +60,23 @@
 
   <ItemGroup>
     <Reference Include="FlatBuffers.Core">
-      <HintPath>..\..\Rainier-Assemblies\1.3.20.160837.20230110_1732_PAR\FlatBuffers.Core.dll</HintPath>
+      <HintPath>..\..\Rainier-Assemblies\1.3.30.165830.20230206_2021_PAR\FlatBuffers.Core.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="MatchLogic">
-      <HintPath>..\..\Rainier-Assemblies\1.3.20.160837.20230110_1732_PAR\MatchLogic.dll</HintPath>
+      <HintPath>..\..\Rainier-Assemblies\1.3.30.165830.20230206_2021_PAR\MatchLogic.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Platform.Sdk">
-      <HintPath>..\..\Rainier-Assemblies\1.3.20.160837.20230110_1732_PAR\Platform.Sdk.dll</HintPath>
+      <HintPath>..\..\Rainier-Assemblies\1.3.30.165830.20230206_2021_PAR\Platform.Sdk.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="RainierClientSDK">
-      <HintPath>..\..\Rainier-Assemblies\1.3.20.160837.20230110_1732_PAR\RainierClientSDK.dll</HintPath>
+      <HintPath>..\..\Rainier-Assemblies\1.3.30.165830.20230206_2021_PAR\RainierClientSDK.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="SharedLogicUtils">
-      <HintPath>..\..\Rainier-Assemblies\1.3.20.160837.20230110_1732_PAR\SharedLogicUtils.dll</HintPath>
+      <HintPath>..\..\Rainier-Assemblies\1.3.30.165830.20230206_2021_PAR\SharedLogicUtils.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
