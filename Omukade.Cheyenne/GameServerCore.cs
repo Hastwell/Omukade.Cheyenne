@@ -50,7 +50,12 @@ namespace Omukade.Cheyenne
             Converters = new List<JsonConverter>() { new Newtonsoft.Json.Converters.StringEnumConverter(new Newtonsoft.Json.Serialization.DefaultNamingStrategy(), allowIntegerValues: true) }
         };
 
-        private static readonly byte[] DUMMY_EMPTY_SIGNATURE = new byte[0];
+        static readonly Dictionary<string, bool> FEATURE_FLAGS_TO_USE = new Dictionary<string, bool>
+        {
+            {"RuleChanges2023", true } // Enables SV behavior for Pokemon Tools as seperate type of trainer vs pre-SV "Tools are also Items"
+        };
+
+        private static readonly byte[] DUMMY_EMPTY_SIGNATURE = Array.Empty<byte>();
         private static byte[] precompressedGameRules;
         const int PLAYER_ONE = 0, PLAYER_TWO = 1;
 
@@ -62,9 +67,10 @@ namespace Omukade.Cheyenne
         internal Dictionary<string, GameState> ActiveGamesById = new Dictionary<string, GameState>(10);
         Queue<string> PlayersInQueue = new Queue<string>(2);
 
-        public GameServerCore()
+        public GameServerCore(ConfigSettings settings)
         {
             OfflineAdapterHax.parentInstance = this;
+            this.config = settings;
         }
 
         public static void PatchRainier()
@@ -421,7 +427,8 @@ namespace Omukade.Cheyenne
 
             gameState.playerInfos[PLAYER_TWO].playerID, gameState.playerInfos[PLAYER_TWO].playerName,
             deckListP2.ToArray(), 1500f, p2UseMatchTimer: gameState.playerInfos[PLAYER_TWO].settings.useMatchTimer, p2UseOperationTimer: gameState.playerInfos[PLAYER_TWO].settings.useOperationTimer, gameState.playerInfos[PLAYER_TWO].settings.useAutoSelect,
-            MatchMode.Standard, prizeCount: 6, gameState.CanUseDebug);
+            MatchMode.Standard, prizeCount: 6, debug: gameState.CanUseDebug,
+            featureFlags: FEATURE_FLAGS_TO_USE);
 
             bootstrapOperation.QueuePlayerOperation();
             bootstrapOperation.Handle();
@@ -447,7 +454,8 @@ namespace Omukade.Cheyenne
                     readyUpTimeout = 60,
                     offlineMatch = false,
                     useAI = false,
-                    clearCache = true
+                    clearCache = true,
+                    featureSet = FEATURE_FLAGS_TO_USE
                 };
 
                 ServerMessage prebakedRulesMessage = new ServerMessage(MessageType.GameData, string.Empty, currentPlayerInfo.playerID, bootstrapOperation.operationID, gameState.matchId);

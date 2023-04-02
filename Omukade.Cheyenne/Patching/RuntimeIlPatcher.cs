@@ -32,6 +32,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using static MatchLogic.RainierServiceLogger;
@@ -129,6 +130,61 @@ namespace Omukade.Cheyenne.Patching
         public static DeckInfo ImportMetadata(ref DeckInfo deck, string metadata, Action<ErrorResponse> onError)
         {
             throw new NotImplementedException("This should be patched by Harmony. If you are reading this, there is a fundamental problem with this code.");
+        }
+    }
+
+    // Since SV is always in effect, optimize this call from "check ruleset" to "always true".
+    // See you in 2026 when this screws up rule evaluation when the rules change again!
+    [HarmonyPatch(typeof(MatchBoard))]
+    [HarmonyPatch(nameof(MatchBoard.IsRuleSet2023), MethodType.Getter)]
+    static class FeatureSetPerformanceBoost
+    {
+        /* RELEASE
+.method private hidebysig static bool  Implementation(class [MatchLogic]MatchLogic.MatchBoard board) cil managed
+{
+  .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+  // Code size       31 (0x1f)
+  .maxstack  3
+  .locals init (bool V_0)
+  IL_0000:  ldarg.0
+  IL_0001:  callvirt   instance class [System.Collections]System.Collections.Generic.Dictionary`2<string,bool> [MatchLogic]MatchLogic.MatchBoard::get_featureSet()
+  IL_0006:  dup
+  IL_0007:  brtrue.s   IL_000d
+  IL_0009:  pop
+  IL_000a:  ldc.i4.0
+  IL_000b:  br.s       IL_0019
+  IL_000d:  ldstr      "RuleChanges2023"
+  IL_0012:  ldloca.s   V_0
+  IL_0014:  call       instance bool class [System.Collections]System.Collections.Generic.Dictionary`2<string,bool>::TryGetValue(!0,
+                                                                                                                                 !1&)
+  IL_0019:  brfalse.s  IL_001d
+  IL_001b:  ldloc.0
+  IL_001c:  ret
+  IL_001d:  ldc.i4.0
+  IL_001e:  ret
+} // end of method FeatureSetPerformanceBoost::Implementation
+         */
+        [HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> originalInstructions)
+        {
+            // Instructions for "return true;"
+            List<CodeInstruction> instructions = new List<CodeInstruction>
+            {
+                new CodeInstruction(OpCodes.Ldc_I4_1),
+                new CodeInstruction(OpCodes.Ret)
+            };
+
+            return instructions;
+        }
+
+        static bool Implementation(MatchBoard board)
+        {
+            if(board.featureSet?.TryGetValue("RuleChanges2023", out bool isSvRulesEnabled) == true)
+            {
+                return isSvRulesEnabled;
+            }
+
+            return false;
         }
     }
 }

@@ -72,7 +72,7 @@ namespace Omukade.Cheyenne
 
         static private void Init()
         {
-            serverCore = new GameServerCore();
+            serverCore = new GameServerCore(config);
 
             Console.WriteLine("Patching Rainier...");
             GameServerCore.PatchRainier();
