@@ -37,21 +37,29 @@ namespace Omukade.Cheyenne
         public int HttpSecurePort = 10851;
 
         [JsonProperty(PropertyName = "cardsource-overrides-enable")]
-        public bool CardSourceOverridesEnable;
+        public bool CardSourceOverridesEnable = false;
 
         [JsonProperty(PropertyName = "cardsource-overrides-directory")]
-        public string CardSourceOverridesDirectory;
+        public string? CardSourceOverridesDirectory;
 
         [JsonProperty(PropertyName = "disable-player-order-randomization")]
-        public bool DisablePlayerOrderRandomization;
+        public bool DisablePlayerOrderRandomization = false;
 
         [JsonProperty(PropertyName = "discord-error-webhook-enable")]
-        public bool EnableDiscordErrorWebhook;
+        public bool EnableDiscordErrorWebhook = false;
 
         [JsonProperty(PropertyName = "discord-error-webhook-url")]
-        public string? DiscordErrorWebhookUrl;
+        public string? DiscordErrorWebhookUrl = null;
 
         [JsonProperty(PropertyName = "autopar-search-folder")]
-        public string AutoParSearchFolder = "autopar";
+        public string? AutoParSearchFolder = null;
+
+        [JsonProperty(PropertyName = "autopar-ignore-local-install")]
+        public bool AutoParIgnoreLocalInstall = false;
+
+        [JsonProperty(PropertyName = "autopar-update-filename")]
+        public string AutoParUpdateFilename = AutoPAR.Rainier.RainierFetcher.UpdateFilename;
+
+        public bool DebugLogAllMessages = true;
     }
 }

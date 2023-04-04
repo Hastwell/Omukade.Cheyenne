@@ -99,7 +99,7 @@ namespace Omukade.Cheyenne
 
             foreach(GetOnlinePlayersResponse.OnlinePlayerInfo player in onlinePlayers.OnlinePlayers)
             {
-                onlinePlayersTable.AddRow(player.PlayerId ?? "[not sent]", player.DisplayName ?? "[not sent]", player.CurrentGameId ?? "[not in a game]");
+                onlinePlayersTable.AddRow(player.PlayerId ?? "[not sent]", player.DisplayName ?? "(not sent)", player.CurrentGameId ?? "(not in a game)");
             }
 
             AnsiConsole.Write(onlinePlayersTable);

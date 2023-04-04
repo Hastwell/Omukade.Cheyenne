@@ -180,7 +180,14 @@ namespace Omukade.Cheyenne
             }
 
             // OfflineAdapter::ReceiveOperation
-            ServerMessage? smg = JsonConvert.DeserializeObject<ServerMessage>(System.Text.Encoding.UTF8.GetString(gm.message));
+            ServerMessage? smg;
+            using (MemoryStream ms = new MemoryStream(gm.message))
+            {
+                using StreamReader reader = new StreamReader(ms, System.Text.Encoding.UTF8);
+                using JsonTextReader jtr = new JsonTextReader(reader);
+                JsonSerializer jsr = new JsonSerializer();
+                smg = jsr.Deserialize<ServerMessage>(jtr);
+            }
 
             if (smg == null)
             {

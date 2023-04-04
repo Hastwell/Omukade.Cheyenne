@@ -23,13 +23,16 @@ using HarmonyLib;
 using ICSharpCode.SharpZipLib.GZip;
 using MatchLogic;
 using Newtonsoft.Json;
+using Omukade.Cheyenne.Encoding;
 using Platform.Sdk.Models;
 using RainierClientSDK;
 using RainierClientSDK.source.OfflineMatch;
 using SharedLogicUtils.source.Services.Query.Responses;
 using SharedSDKUtils;
+using Spectre.Console;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -185,6 +188,120 @@ namespace Omukade.Cheyenne.Patching
             }
 
             return false;
+        }
+    }
+
+    [HarmonyPatch(typeof(OfflineAdapter), nameof(OfflineAdapter.ReceiveOperation))]
+    public static class ReceiveOperationShowsIlOffsetsInErrors
+    {
+        [HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            MethodInfo EXCEPTION_GET_STACKTRACE = AccessTools.PropertyGetter(typeof(Exception), nameof(Exception.StackTrace));
+            MethodInfo ENCHANCED_STACKTRACE = AccessTools.Method(typeof(ReceiveOperationShowsIlOffsetsInErrors), nameof(ReceiveOperationShowsIlOffsetsInErrors.GetStackTraceWithIlOffsets));
+
+            foreach (CodeInstruction instruction in instructions)
+            {
+                if(instruction.Calls(EXCEPTION_GET_STACKTRACE))
+                {
+                    // replace stacktrace call with out enchanced stackframe method that returns IL offsets
+                    yield return new CodeInstruction(OpCodes.Call, ENCHANCED_STACKTRACE);
+                }
+                else
+                {
+                    yield return instruction;
+                }
+            }
+        }
+
+        public static string GetStackTraceWithIlOffsets(Exception ex)
+        {
+            System.Diagnostics.StackTrace st = new System.Diagnostics.StackTrace(ex);
+            StringBuilder sb = new StringBuilder();
+            PrepareStacktraceString(sb, st);
+            string preparedStacktrace = sb.ToString();
+
+            if(System.Diagnostics.Debugger.IsAttached)
+            {
+                System.Diagnostics.Debugger.Break();
+            }
+
+            AnsiConsole.WriteException(ex);
+
+            return preparedStacktrace;
+        }
+
+        private static void PrepareStacktraceString(StringBuilder sb, StackTrace st)
+        {
+            foreach (System.Diagnostics.StackFrame frame in st.GetFrames())
+            {
+                try
+                {
+                    MethodBase? frameMethod = frame.GetMethod();
+                    if (frameMethod == null)
+                    {
+                        sb.Append("[null method] - at IL_");
+                    }
+                    else
+                    {
+                        string frameClass = frameMethod.DeclaringType?.FullName ?? "(null)";
+                        string frameMethodDisplayName = frameMethod.Name;
+                        int frameMetadataToken = frameMethod.MetadataToken;
+                        sb.Append($"{frameClass}::{frameMethodDisplayName} @{frameMetadataToken:X8} - at IL_");
+                    }
+                    sb.Append(frame.GetILOffset().ToString("X4"));
+                    sb.AppendLine();
+                }
+                catch (Exception ex)
+                {
+                    sb.AppendLine($"[error on this frame - {ex.GetType().FullName} - {ex.Message}]");
+                }
+            }
+        }
+    }
+
+    [HarmonyPatch]
+    static class UseWhitelistedResolverMatchOperation
+    {
+        static readonly WhitelistedContractResolver resolver = new WhitelistedContractResolver();
+
+        static IEnumerable<MethodBase> TargetMethods() => typeof(MatchOperation)
+            .GetConstructors();
+
+        [HarmonyPostfix]
+        static void Postfix(MatchOperation __instance)
+        {
+            __instance.settings.ContractResolver = resolver;
+        }
+    }
+
+    [HarmonyPatch]
+    static class UseWhitelistedResolverMatchBoard
+    {
+        static readonly WhitelistedContractResolver resolver = new WhitelistedContractResolver();
+
+        static IEnumerable<MethodBase> TargetMethods() => typeof(MatchBoard)
+            .GetConstructors();
+
+        [HarmonyPostfix]
+        static void Postfix(MatchBoard __instance)
+        {
+            __instance.settings.ContractResolver = resolver;
+        }
+    }
+
+    [HarmonyPatch]
+    static class UseWhitelistedResolverGameState
+    {
+        static readonly WhitelistedContractResolver resolver = new WhitelistedContractResolver();
+
+        static IEnumerable<MethodBase> TargetMethods() => typeof(GameState)
+            .GetConstructors();
+
+        [HarmonyPostfix]
+        static void Postfix(GameState __instance)
+        {
+            __instance.settings.ContractResolver = resolver;
         }
     }
 }
