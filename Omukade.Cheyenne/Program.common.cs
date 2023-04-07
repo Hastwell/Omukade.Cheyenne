@@ -19,6 +19,7 @@
 using Newtonsoft.Json;
 using Omukade.AutoPAR;
 using Omukade.Cheyenne.Encoding;
+using Spectre.Console;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -40,7 +41,7 @@ namespace Omukade.Cheyenne
             InitAutoPar();
             Init();
 
-            WebApplication app = PrepareWsServer();
+            app = PrepareWsServer();
             StartWsProcessorThread();
             app.Start();
             CmdShell();
@@ -109,7 +110,7 @@ namespace Omukade.Cheyenne
             WhitelistedSerializeContractResolver.ReplaceContractResolvers();
 
             Console.WriteLine("Preloading/Precompressing Heavy Data...");
-            GameServerCore.RefreshSharedGameRules(config);            
+            GameServerCore.RefreshSharedGameRules(config);
         }
 
         /// <summary>
@@ -134,10 +135,7 @@ namespace Omukade.Cheyenne
 
         internal static void ReportError(Exception ex)
         {
-            StringBuilder consoleErrorStringBuilder = new StringBuilder();
-            consoleErrorStringBuilder.Append($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ssZ} Exception : " + ex.GetType().Name);
-            WriteInnerExceptionToStringbuider(ex, consoleErrorStringBuilder);
-            consoleErrorStringBuilder.AppendLine(ex.StackTrace);
+            AnsiConsole.WriteException(ex);
 
             if (config.EnableDiscordErrorWebhook && config.DiscordErrorWebhookUrl != null)
             {

@@ -33,43 +33,43 @@ namespace Omukade.Cheyenne.Encoding
     {
         public static Platform.Sdk.Models.Matchmaking.BeginMatchmaking DecodeBeginMatchmaking(ByteBuffer bb)
         {
-            var modelMessage = DecodeCommon<com.pokemon.studio.contracts.client_matchmaker.BeginMatchmaking>(bb);
+            com.pokemon.studio.contracts.client_matchmaker.BeginMatchmaking modelMessage = DecodeCommon<com.pokemon.studio.contracts.client_matchmaker.BeginMatchmaking>(bb);
             return new(modelMessage.Txid, modelMessage.GetContextBytes()?.ToArray());
         }
 
         public static Platform.Sdk.Models.Matchmaking.CancelMatchmaking DecodeCancelMatchmaking(ByteBuffer bb)
         {
-            var modelMessage = DecodeCommon<com.pokemon.studio.contracts.client_matchmaker.CancelMatchmaking>(bb);
+            com.pokemon.studio.contracts.client_matchmaker.CancelMatchmaking modelMessage = DecodeCommon<com.pokemon.studio.contracts.client_matchmaker.CancelMatchmaking>(bb);
             return new(modelMessage.Txid);
         }
 
         public static Platform.Sdk.Models.GameServer.GameMessage DecodeGameMessage(ByteBuffer bb)
         {
-            var modelMessage = DecodeCommon<com.pokemon.studio.contracts.client_gameserver.GameMessage>(bb);
+            com.pokemon.studio.contracts.client_gameserver.GameMessage modelMessage = DecodeCommon<com.pokemon.studio.contracts.client_gameserver.GameMessage>(bb);
             return new Platform.Sdk.Models.GameServer.GameMessage { gameId = modelMessage.GameId, message = modelMessage.GetMessageBytes()?.ToArray() };
         }
         public static Platform.Sdk.Models.Matchmaking.ProposeDirectMatch DecodeProposeDirectMatch(ByteBuffer bb)
         {
-            var modelMessage = DecodeCommon<com.pokemon.studio.contracts.client_matchmaker.ProposeDirectMatch>(bb);
+            com.pokemon.studio.contracts.client_matchmaker.ProposeDirectMatch modelMessage = DecodeCommon<com.pokemon.studio.contracts.client_matchmaker.ProposeDirectMatch>(bb);
             SignedAccountId? sai = DecodeSignedAccountIdModel(modelMessage.TargetAccountId);
             return new(modelMessage.Txid, sai, modelMessage.GetContextBytes()?.ToArray());
         }
 
         public static Platform.Sdk.Models.Matchmaking.CancelDirectMatch DecodeCancelDirectMatch(ByteBuffer bb)
         {
-            var modelMessage = DecodeCommon<com.pokemon.studio.contracts.client_matchmaker.CancelDirectMatch>(bb);
+            com.pokemon.studio.contracts.client_matchmaker.CancelDirectMatch modelMessage = DecodeCommon<com.pokemon.studio.contracts.client_matchmaker.CancelDirectMatch>(bb);
             return new Platform.Sdk.Models.Matchmaking.CancelDirectMatch(DecodeSignedAccountIdModel(modelMessage.TargetAccountId), DecodeSignedMatchContextModel(modelMessage.SignedMatchContext));
         }
 
         public static Platform.Sdk.Models.Matchmaking.AcceptDirectMatch DecodeAcceptDirectMatch(ByteBuffer bb)
         {
-            var modelMessage = DecodeCommon<com.pokemon.studio.contracts.client_matchmaker.AcceptDirectMatch>(bb);
+            com.pokemon.studio.contracts.client_matchmaker.AcceptDirectMatch modelMessage = DecodeCommon<com.pokemon.studio.contracts.client_matchmaker.AcceptDirectMatch>(bb);
             return new Platform.Sdk.Models.Matchmaking.AcceptDirectMatch(modelMessage.Txid, DecodeDirectMatchInvitationModel(modelMessage.Invitation), modelMessage.GetContextBytes()?.ToArray());
         }
 
         internal static Platform.Sdk.Models.Query.QueryMessage DecodeQueryMessage(ByteBuffer bb)
         {
-            var modelMessage = DecodeCommon<com.pokemon.studio.contracts.client_gameserver.QueryMessage>(bb);
+            com.pokemon.studio.contracts.client_gameserver.QueryMessage modelMessage = DecodeCommon<com.pokemon.studio.contracts.client_gameserver.QueryMessage>(bb);
             return new Platform.Sdk.Models.Query.QueryMessage { queryId = modelMessage.QueryId, message = modelMessage.GetMessageBytes()?.ToArray() };
         }
 

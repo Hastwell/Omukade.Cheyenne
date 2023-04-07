@@ -221,12 +221,12 @@ namespace Omukade.Cheyenne.Patching
             PrepareStacktraceString(sb, st);
             string preparedStacktrace = sb.ToString();
 
-            if(System.Diagnostics.Debugger.IsAttached)
+            Program.ReportError(ex);
+
+            if (System.Diagnostics.Debugger.IsAttached)
             {
                 System.Diagnostics.Debugger.Break();
             }
-
-            AnsiConsole.WriteException(ex);
 
             return preparedStacktrace;
         }

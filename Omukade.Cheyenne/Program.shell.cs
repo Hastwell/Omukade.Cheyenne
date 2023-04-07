@@ -36,6 +36,8 @@ namespace Omukade.Cheyenne
 
         static void CmdShell()
         {
+            Console.CancelKeyPress += Console_CancelKeyPress;
+
             bool continueShell = true;
             while (continueShell)
             {
@@ -54,11 +56,25 @@ namespace Omukade.Cheyenne
                     case "players":
                         GetConnectedPlayers();
                         break;
+                    case "exit":
+                    case "quit":
+                    case "stop":
+                        TerminateConsole();
+                        return;
                     default:
                         AnsiConsole.WriteLine($"Unknown command: {cmdName}");
                         break;
                 }
             }
+        }
+
+        static void TerminateConsole()
+        {
+            bool stoppedInTime = StopWsServer().AsTask().Wait(10_000);
+            if (stoppedInTime) return;
+
+            Console.WriteLine("Server did not stop with 10s; force-killing.");
+            Environment.Exit(2);
         }
 
         static TResponse SendWsMessageAndWaitForResponse<TResponse>(object request)
@@ -103,6 +119,12 @@ namespace Omukade.Cheyenne
             }
 
             AnsiConsole.Write(onlinePlayersTable);
+        }
+        private static void Console_CancelKeyPress(object? sender, ConsoleCancelEventArgs e)
+        {
+            Console.WriteLine("CTRL-C received; preparing to stop");
+            TerminateConsole();
+            Environment.Exit(0); // The app doesn't seem to want to exit on its own when CTRL-C'd, so just shank it in the back.
         }
     }
 }

@@ -155,6 +155,7 @@ namespace Omukade.Cheyenne
             continueRunningWsServer = false;
             await app.StopAsync();
             await app.DisposeAsync();
+            wsMessageProcessorThread?.Join(10_000);
         }
 
         static void ProcessSingleWsMessage(ReceivedMessage messageWrapper)
