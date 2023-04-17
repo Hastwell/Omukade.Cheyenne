@@ -19,6 +19,7 @@
 using MatchLogic;
 using Newtonsoft.Json;
 using Omukade.Cheyenne.CustomMessages;
+using Omukade.Cheyenne.Model;
 using Omukade.Cheyenne.Patching;
 using Platform.Sdk.Models;
 using Platform.Sdk.Models.GameServer;
@@ -64,12 +65,11 @@ namespace Omukade.Cheyenne
 
         internal Dictionary<string, PlayerMetadata> UserMetadata = new Dictionary<string, PlayerMetadata>(2);
 
-        internal Dictionary<string, GameState> ActiveGamesById = new Dictionary<string, GameState>(10);
+        internal Dictionary<string, GameStateOmukade> ActiveGamesById = new Dictionary<string, GameStateOmukade>(10);
         Queue<string> PlayersInQueue = new Queue<string>(2);
 
         public GameServerCore(ConfigSettings settings)
         {
-            OfflineAdapterHax.parentInstance = this;
             this.config = settings;
         }
 
@@ -194,8 +194,7 @@ namespace Omukade.Cheyenne
                 throw new ArgumentNullException("GameMessage's SMG is null");
             }
 
-            string? rawPayload = smg.compressedValue == null ? null : Compression.Unzip(smg.compressedValue);
-            GameState currentGame = player.CurrentGame;
+            GameStateOmukade currentGame = (GameStateOmukade) player.CurrentGame;
 
             switch (smg.messageType)
             {
@@ -205,6 +204,7 @@ namespace Omukade.Cheyenne
                     OfflineAdapter.ReceiveOperation(player.PlayerId, currentGame, smg);
                     break;
                 case MessageType.SendEmote:
+                    string? rawPayload = smg.compressedValue == null ? null : Compression.Unzip(smg.compressedValue);
                     if (rawPayload == null) throw new ArgumentNullException("Emote payload is null");
 
                     string? emoteName = JsonConvert.DeserializeObject<string>(rawPayload);
@@ -217,6 +217,23 @@ namespace Omukade.Cheyenne
                         if (playerInGame.playerID == player.PlayerId) continue;
 
                         SendPacketToClient(UserMetadata.GetValueOrDefault(playerInGame.playerID), new ServerMessage(MessageType.SendEmote, emoteName, playerInGame.playerID, smg.operationID, currentGame.matchId).AsPlayerMessage());
+                    }
+                    break;
+                case MessageType.MatchReadyTimeOut:
+                    // concede this player
+                    ForcePlayerToQuit(player);
+                    break;
+                case MessageType.OpponentMatchTimeOut:
+                case MessageType.OpponentOperationTimeOut:
+                    // concede the opponent
+                    PlayerMetadata? opponentPlayerData = currentGame.player1metadata?.PlayerId == player.PlayerId ? currentGame.player2metadata : currentGame.player1metadata;
+                    if (opponentPlayerData != null)
+                    {
+                        ForcePlayerToQuit(player);
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"Player {player.PlayerDisplayName ?? "[null]"} tried to timeout their opponent via {smg.messageType}, but the opponent is null.");
                     }
                     break;
                 default:
@@ -362,34 +379,40 @@ namespace Omukade.Cheyenne
 
         private void StartGameBetweenTwoPlayers(PlayerMetadata playerOneMetadata, PlayerMetadata playerTwoMetadata)
         {
-            GameState gameState = new GameState
+            GameStateOmukade gameState = new GameStateOmukade(parentServerInstance: this)
             {
-                matchId = Guid.NewGuid().ToString()
+                matchId = Guid.NewGuid().ToString(),
             };
 
             // By default, the game rules always have Player 1 pick the opening coin flip. To "fix" this, crudely randomize the player order.
-            if (!config.DisablePlayerOrderRandomization && DateTime.UtcNow.Millisecond % 2 == 0)
+            if (!config.DisablePlayerOrderRandomization)
             {
-                PlayerMetadata p1scratch = playerOneMetadata;
-                playerOneMetadata = playerTwoMetadata;
-                playerTwoMetadata = p1scratch;
+                int msForPlayerRandomization = DateTime.UtcNow.Millisecond;
+                if (msForPlayerRandomization % 2 == 0)
+                {
+                    PlayerMetadata p1scratch = playerOneMetadata;
+                    playerOneMetadata = playerTwoMetadata;
+                    playerTwoMetadata = p1scratch;
+                }
             }
 
+            gameState.player1metadata = playerOneMetadata;
             gameState.playerInfos[PLAYER_ONE].playerName = playerOneMetadata.PlayerDisplayName;
             gameState.playerInfos[PLAYER_ONE].playerID = playerOneMetadata.PlayerId;
             gameState.playerInfos[PLAYER_ONE].sentPlayerInfo = true;
             gameState.playerInfos[PLAYER_ONE].settings = new PlayerSettings { gameMode = GameMode.Standard, gameplayType = GameplayType.Ranked, useAutoSelect = false, useMatchTimer = false, useOperationTimer = false, matchMode = MatchMode.Standard, matchTime = 1500f };
             gameState.playerInfos[PLAYER_ONE].settings.name = playerOneMetadata.PlayerDisplayName;
             gameState.playerInfos[PLAYER_ONE].settings.outfit = playerOneMetadata.PlayerOutfit;
-            DeckInfoHax.ImportMetadata(ref gameState.playerInfos[PLAYER_ONE].settings.deckInfo, playerOneMetadata.CurrentDeck!.Value.metadata, e => throw new Exception($"Error parsing deck for {playerOneMetadata.PlayerDisplayName}: {e}"));
+            DeckInfo.ImportMetadata(ref gameState.playerInfos[PLAYER_ONE].settings.deckInfo, playerOneMetadata.CurrentDeck!.Value.metadata, e => throw new Exception($"Error parsing deck for {playerOneMetadata.PlayerDisplayName}: {e}"));
             gameState.playerInfos[PLAYER_ONE].settings.deckInfo.cards = new Dictionary<string, int>(playerOneMetadata.CurrentDeck.Value.items);
 
+            gameState.player2metadata = playerTwoMetadata;
             gameState.playerInfos[PLAYER_TWO].playerName = playerTwoMetadata.PlayerDisplayName;
             gameState.playerInfos[PLAYER_TWO].playerID = playerTwoMetadata.PlayerId;
             gameState.playerInfos[PLAYER_TWO].sentPlayerInfo = true;
             gameState.playerInfos[PLAYER_TWO].settings = new PlayerSettings { gameMode = GameMode.Standard, gameplayType = GameplayType.Ranked, useAutoSelect = false, useMatchTimer = false, useOperationTimer = false, matchMode = MatchMode.Standard, matchTime = 1500f };
             gameState.playerInfos[PLAYER_TWO].settings.outfit = playerTwoMetadata.PlayerOutfit;
-            DeckInfoHax.ImportMetadata(ref gameState.playerInfos[PLAYER_TWO].settings.deckInfo, playerTwoMetadata.CurrentDeck!.Value.metadata, e => throw new Exception($"Error parsing deck for {playerTwoMetadata.PlayerDisplayName}: {e}"));
+            DeckInfo.ImportMetadata(ref gameState.playerInfos[PLAYER_TWO].settings.deckInfo, playerTwoMetadata.CurrentDeck!.Value.metadata, e => throw new Exception($"Error parsing deck for {playerTwoMetadata.PlayerDisplayName}: {e}"));
             gameState.playerInfos[PLAYER_TWO].settings.name = playerTwoMetadata.PlayerDisplayName;
             gameState.playerInfos[PLAYER_TWO].settings.deckInfo.cards = new Dictionary<string, int>(playerTwoMetadata.CurrentDeck.Value.items);
 
@@ -465,11 +488,16 @@ namespace Omukade.Cheyenne
                     featureSet = FEATURE_FLAGS_TO_USE
                 };
 
-                ServerMessage prebakedRulesMessage = new ServerMessage(MessageType.GameData, string.Empty, currentPlayerInfo.playerID, bootstrapOperation.operationID, gameState.matchId);
-                prebakedRulesMessage.SetPrecompressedBody(precompressedGameRules);
+                ServerMessage prebakedRulesMessage = new ServerMessage(MessageType.GameData, string.Empty, currentPlayerInfo.playerID, bootstrapOperation.operationID, gameState.matchId)
+                {
+                    compressedValue = precompressedGameRules
+                };
 
-                ServerMessage prebakedCardCacheMessage = new ServerMessage(MessageType.CardCache, string.Empty, currentPlayerInfo.playerID, bootstrapOperation.operationID, gameState.matchId);
-                prebakedCardCacheMessage.SetPrecompressedBody(prebakedCardData);
+                ServerMessage prebakedCardCacheMessage = new ServerMessage(MessageType.CardCache, string.Empty, currentPlayerInfo.playerID, bootstrapOperation.operationID, gameState.matchId)
+                {
+                    compressedValue = prebakedCardData
+                };
+                
 
                 SendPacketToClient(currentPlayerMetadata, new ServerMessage(MessageType.MatchCreated, matchCreated, "SERVER", bootstrapOperation.operationID, gameState.matchId).AsPlayerMessage());
                 SendPacketToClient(currentPlayerMetadata, prebakedRulesMessage.AsPlayerMessage(), isPrecompressed: true);
@@ -494,15 +522,15 @@ namespace Omukade.Cheyenne
             }
         }
 
-        internal bool ResolveOperation(GameState currentGameState, MatchOperation currentOperation, bool isInputUpdate = false)
+        internal bool ResolveOperation(GameStateOmukade currentGameState, MatchOperation currentOperation, bool isInputUpdate = false)
         {
             switch (currentOperation.status)
             {
                 case OperationStatus.Error:
                     string invalidOperationErrorMessage = $"Error performing operation {currentOperation.operationID} on game {currentGameState.matchId} ({string.Join(" vs ", currentGameState.playerInfos.Select(p => p.playerName))})";
+#warning TODO: Consolidate logging
                     Logging.WriteError(invalidOperationErrorMessage);
                     ErrorHandler?.Invoke(invalidOperationErrorMessage, null);
-                    //throw new InvalidOperationException();
                     return false;
 
                 case OperationStatus.WaitingForInput:
@@ -561,6 +589,14 @@ namespace Omukade.Cheyenne
         {
             Console.WriteLine($"Player {playerData.PlayerDisplayName ?? "[no displayname]"} disconnected. Is in game: {playerData.CurrentGame != null}");
 
+            ForcePlayerToQuit(playerData);
+
+            RemovePlayerFromAllMatchmaking(playerData);
+            UserMetadata.Remove(playerData.PlayerId!);
+        }
+
+        public void ForcePlayerToQuit(PlayerMetadata playerData)
+        {
             // If the player is in a battle, forfit.
             if (playerData.CurrentGame != null)
             {
@@ -569,9 +605,6 @@ namespace Omukade.Cheyenne
                 ServerMessage smg = new ServerMessage(MessageType.MatchOperation, pop, playerData.PlayerId, pop.operationID, playerData.CurrentGame.matchId);
                 OfflineAdapter.ReceiveOperation(playerData.PlayerId, playerData.CurrentGame, smg);
             }
-
-            RemovePlayerFromAllMatchmaking(playerData);
-            UserMetadata.Remove(playerData.PlayerId!);
         }
 
         private List<CardSource> GetCardData(IEnumerable<string> cardsToFetch)

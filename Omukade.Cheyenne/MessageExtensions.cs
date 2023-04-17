@@ -50,9 +50,5 @@ namespace Omukade.Cheyenne
             GZip.Compress(cachedDataBytes, outputData, true, bufferSize: 4096, level: compressionLevel);
             return outputData.ToArray();
         }
-
-#if !NOIMEX
-        public static SerializedPacket ToSerializedPacket(this SupplementalDataMessage sdm) => SerializedPacket.FromSerializedPacket(sdm);
-#endif
     }
 }

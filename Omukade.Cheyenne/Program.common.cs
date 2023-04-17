@@ -96,6 +96,7 @@ namespace Omukade.Cheyenne
             }
 
             Console.WriteLine("Injecting AutoPAR...");
+            AssemblyLoadInterceptor.ParCore.CecilProcessors.Add(Omukade.AutoPAR.Rainier.RainierSpecificPatches.MakeGameStateCloneVirtual);
             AssemblyLoadInterceptor.Initialize(searchFolder);
         }
 

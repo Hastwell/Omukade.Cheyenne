@@ -24,6 +24,7 @@ using ICSharpCode.SharpZipLib.GZip;
 using MatchLogic;
 using Newtonsoft.Json;
 using Omukade.Cheyenne.Encoding;
+using Omukade.Cheyenne.Model;
 using Platform.Sdk.Models;
 using RainierClientSDK;
 using RainierClientSDK.source.OfflineMatch;
@@ -94,80 +95,138 @@ namespace Omukade.Cheyenne.Patching
     [HarmonyPatch(typeof(OfflineAdapter))]
     static class OfflineAdapterHax
     {
-        internal static GameServerCore parentInstance;
-
         [HarmonyPrefix]
-        [HarmonyPatch("LogMsg")]
+        [HarmonyPatch(nameof(OfflineAdapter.LogMsg))]
         static bool QuietLogMsg() => false;
 
         [HarmonyPrefix]
-        [HarmonyPatch("ResolveOperation")]
+        [HarmonyPatch(nameof(OfflineAdapter.ResolveOperation))]
         static bool ResolveOperationViaCheyenne(ref bool __result, string accountID, MatchOperation currentOperation, GameState state, string messageID)
         {
-            __result = parentInstance.ResolveOperation(state, currentOperation, isInputUpdate: false);
+            GameStateOmukade omuState = (GameStateOmukade)state;
+            __result = omuState.parentServerInstance.ResolveOperation(omuState, currentOperation, isInputUpdate: false);
             return false;
         }
+    }
 
-        [HarmonyPrefix]
-        [HarmonyPatch(nameof(OfflineAdapter.SendMessage), typeof(ServerMessage))]
-        static bool SendMessageViaCheyenne(ServerMessage message)
+    [HarmonyPatch]
+    public static class OfflineAdapterUsesOmuSendMessage
+    {
+        [HarmonyTargetMethods]
+        static IEnumerable<MethodBase> TargetMethods() => new string[]
+            {
+                nameof(OfflineAdapter.ReceiveOperation),
+                nameof(OfflineAdapter.CreateOperation),
+                nameof(OfflineAdapter.ResolveOperation),
+                nameof(OfflineAdapter.LoadBoardState)
+            }.Select(name => AccessTools.Method(typeof(OfflineAdapter), name));
+
+        [HarmonyTranspiler]
+        [HarmonyPatch]
+        static IEnumerable<CodeInstruction> UseOmuStateParentServerInstanceToSendMessages(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
         {
+            MethodInfo SEND_MESSAGE_SINGLE = AccessTools.Method(typeof(OfflineAdapter), nameof(OfflineAdapter.SendMessage), parameters: new Type[] { typeof(ServerMessage) });
+            MethodInfo OMU_SEND_MESSAGE_SINGLE = AccessTools.Method(typeof(OfflineAdapterUsesOmuSendMessage), nameof(OfflineAdapterUsesOmuSendMessage.SendMessage), parameters: new Type[] { typeof(ServerMessage), typeof(GameState) });
+
+            MethodInfo SEND_MESSAGE_MULTIPLE = AccessTools.Method(typeof(OfflineAdapter), nameof(OfflineAdapter.SendMessage), parameters: new Type[] { typeof(List<ServerMessage>) });
+            MethodInfo OMU_SEND_MESSAGE_MULTIPLE = AccessTools.Method(typeof(OfflineAdapterUsesOmuSendMessage), nameof(OfflineAdapterUsesOmuSendMessage.SendMessage), parameters: new Type[] { typeof(IEnumerable<ServerMessage>), typeof(GameState) });
+
+            ParameterInfo gameStateParam = __originalMethod.GetParameters().First(param => param.ParameterType == typeof(GameState));
+            int indexOfGameStateArg = gameStateParam.Position;
+
+            foreach (CodeInstruction instruction in instructions)
+            {
+                if (instruction.Calls(SEND_MESSAGE_SINGLE))
+                {
+                    yield return new CodeInstruction(OpCodes.Ldarg, indexOfGameStateArg);
+                    yield return new CodeInstruction(OpCodes.Call, OMU_SEND_MESSAGE_SINGLE);
+                }
+                else if (instruction.Calls(SEND_MESSAGE_MULTIPLE))
+                {
+                    yield return new CodeInstruction(OpCodes.Ldarg, indexOfGameStateArg);
+                    yield return new CodeInstruction(OpCodes.Call, OMU_SEND_MESSAGE_MULTIPLE);
+                }
+                else
+                {
+                    yield return instruction;
+                }
+            }
+        }
+
+        public static void SendMessage(IEnumerable<ServerMessage> messages, GameState gameState)
+        {
+            foreach (ServerMessage sm in messages)
+            {
+                SendMessage(sm, gameState);
+            }
+        }
+        public static void SendMessage(ServerMessage message, GameState gameState)
+        {
+            if (gameState is not GameStateOmukade gso)
+            {
+                throw new ArgumentException("GameState must be GameStateOmukade");
+            }
+
             try
             {
-                GameServerCore.SendPacketToClient(parentInstance.UserMetadata.GetValueOrDefault(message.accountID), message.AsPlayerMessage());
+                GameServerCore.SendPacketToClient(gso.parentServerInstance.UserMetadata.GetValueOrDefault(message.accountID), message.AsPlayerMessage());
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine($"SendMessage Error :: {e.GetType().FullName} - {e.Message}");
                 throw;
             }
-            return false;
-        }
-    }
-
-    [HarmonyPatch(typeof(DeckInfo))]
-    static class DeckInfoHax
-    {
-        [HarmonyReversePatch]
-        [HarmonyPatch("ImportMetadata")]
-        public static DeckInfo ImportMetadata(ref DeckInfo deck, string metadata, Action<ErrorResponse> onError)
-        {
-            throw new NotImplementedException("This should be patched by Harmony. If you are reading this, there is a fundamental problem with this code.");
         }
     }
 
     // Since SV is always in effect, optimize this call from "check ruleset" to "always true".
+    // This appears to be called every time a card-type filter (eg, "is Item") is evaluated.
     // See you in 2026 when this screws up rule evaluation when the rules change again!
     [HarmonyPatch(typeof(MatchBoard))]
     [HarmonyPatch(nameof(MatchBoard.IsRuleSet2023), MethodType.Getter)]
     static class FeatureSetPerformanceBoost
     {
-        /* RELEASE
-.method private hidebysig static bool  Implementation(class [MatchLogic]MatchLogic.MatchBoard board) cil managed
-{
-  .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
-  // Code size       31 (0x1f)
-  .maxstack  3
-  .locals init (bool V_0)
-  IL_0000:  ldarg.0
-  IL_0001:  callvirt   instance class [System.Collections]System.Collections.Generic.Dictionary`2<string,bool> [MatchLogic]MatchLogic.MatchBoard::get_featureSet()
-  IL_0006:  dup
-  IL_0007:  brtrue.s   IL_000d
-  IL_0009:  pop
-  IL_000a:  ldc.i4.0
-  IL_000b:  br.s       IL_0019
-  IL_000d:  ldstr      "RuleChanges2023"
-  IL_0012:  ldloca.s   V_0
-  IL_0014:  call       instance bool class [System.Collections]System.Collections.Generic.Dictionary`2<string,bool>::TryGetValue(!0,
-                                                                                                                                 !1&)
-  IL_0019:  brfalse.s  IL_001d
-  IL_001b:  ldloc.0
-  IL_001c:  ret
-  IL_001d:  ldc.i4.0
-  IL_001e:  ret
-} // end of method FeatureSetPerformanceBoost::Implementation
-         */
+        /*
+        Reference slightly higher-performant implementation:
+        ========================================================
+        static bool Implementation(MatchBoard board)
+        {
+            if(board.featureSet?.TryGetValue("RuleChanges2023", out bool isSvRulesEnabled) == true)
+            {
+                return isSvRulesEnabled;
+            }
+
+            return false;
+        }
+        
+        IL in Release mode:
+        ========================================================
+        .method private hidebysig static bool  Implementation(class [MatchLogic]MatchLogic.MatchBoard board) cil managed
+        {
+          .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+          // Code size       31 (0x1f)
+          .maxstack  3
+          .locals init (bool V_0)
+          IL_0000:  ldarg.0
+          IL_0001:  callvirt   instance class [System.Collections]System.Collections.Generic.Dictionary`2<string,bool> [MatchLogic]MatchLogic.MatchBoard::get_featureSet()
+          IL_0006:  dup
+          IL_0007:  brtrue.s   IL_000d
+          IL_0009:  pop
+          IL_000a:  ldc.i4.0
+          IL_000b:  br.s       IL_0019
+          IL_000d:  ldstr      "RuleChanges2023"
+          IL_0012:  ldloca.s   V_0
+          IL_0014:  call       instance bool class [System.Collections]System.Collections.Generic.Dictionary`2<string,bool>::TryGetValue(!0,
+                                                                                                                                         !1&)
+          IL_0019:  brfalse.s  IL_001d
+          IL_001b:  ldloc.0
+          IL_001c:  ret
+          IL_001d:  ldc.i4.0
+          IL_001e:  ret
+        } // end of method FeatureSetPerformanceBoost::Implementation
+        */
         [HarmonyTranspiler]
+        [HarmonyPatch]
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> originalInstructions)
         {
             // Instructions for "return true;"
@@ -180,21 +239,47 @@ namespace Omukade.Cheyenne.Patching
             return instructions;
         }
 
-        static bool Implementation(MatchBoard board)
-        {
-            if(board.featureSet?.TryGetValue("RuleChanges2023", out bool isSvRulesEnabled) == true)
-            {
-                return isSvRulesEnabled;
-            }
+    }
 
-            return false;
+/*  [HarmonyPatch(typeof(OfflineAdapter), nameof(OfflineAdapter.ReceiveOperation))]
+    static class ReceiveOperationUsesCopyStateVirtual
+    {
+        [HarmonyTranspiler]
+        [HarmonyPatch]
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            MethodInfo COPY_STATE = AccessTools.Method(typeof(GameState), nameof(GameState.CopyState));
+            MethodInfo COPY_STATE_GSO = AccessTools.Method(typeof(GameStateOmukade), nameof(GameState.CopyState));
+
+            foreach (CodeInstruction instruction in instructions)
+            {
+                if (instruction.Calls(COPY_STATE))
+                {
+                    // Replace original copystate with callvirt so derived copystates are used.
+                    // I have no idea why callvirt isn't resolving the overriden CopyState in GameStateOmukade.
+                    yield return new CodeInstruction(OpCodes.Callvirt, COPY_STATE_GSO);
+                }
+                else
+                {
+                    yield return instruction;
+                }
+            }
         }
+    }*/
+
+    [HarmonyPatch(typeof(GameState), nameof(GameState.CopyState))]
+    static class GameStateCopyStateCrashes
+    {
+        [HarmonyPrefix]
+        [HarmonyPatch]
+        static void Prefix() => throw new InvalidOperationException("Omukade: Use of GameState.CopyState is not valid and can cause information loss. Ensure the caller of this method is patched by ReceiveOperationUsesCopyStateVirtual");
     }
 
     [HarmonyPatch(typeof(OfflineAdapter), nameof(OfflineAdapter.ReceiveOperation))]
     public static class ReceiveOperationShowsIlOffsetsInErrors
     {
         [HarmonyTranspiler]
+        [HarmonyPatch]
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
             MethodInfo EXCEPTION_GET_STACKTRACE = AccessTools.PropertyGetter(typeof(Exception), nameof(Exception.StackTrace));
@@ -269,6 +354,7 @@ namespace Omukade.Cheyenne.Patching
             .GetConstructors();
 
         [HarmonyPostfix]
+        [HarmonyPatch]
         static void Postfix(MatchOperation __instance)
         {
             __instance.settings.ContractResolver = resolver;
@@ -284,6 +370,7 @@ namespace Omukade.Cheyenne.Patching
             .GetConstructors();
 
         [HarmonyPostfix]
+        [HarmonyPatch]
         static void Postfix(MatchBoard __instance)
         {
             __instance.settings.ContractResolver = resolver;
@@ -299,6 +386,7 @@ namespace Omukade.Cheyenne.Patching
             .GetConstructors();
 
         [HarmonyPostfix]
+        [HarmonyPatch]
         static void Postfix(GameState __instance)
         {
             __instance.settings.ContractResolver = resolver;
