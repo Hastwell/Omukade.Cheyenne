@@ -36,11 +36,17 @@ namespace Omukade.Cheyenne
     {
         static GameServerCore()
         {
-            RainierServiceLogger.instance = new RainierServiceLogger(RainierServiceLogger.LogLevel.WARNING | RainierServiceLogger.LogLevel.ERROR, _ => RainierServiceLogger.Clear());
+            // Default behavior is log only WARN | ERROR to console. Creating an instance sets the global logger to this instance, and buffers log messages.
+            // RainierServiceLogger.instance = new RainierServiceLogger(RainierServiceLogger.LogLevel.WARNING | RainierServiceLogger.LogLevel.ERROR, _ => RainierServiceLogger.Clear());
         }
 
         static bool rainerAlreadyPatched;
         public static bool GameRulesAlreadyLoaded => precompressedGameRules != null;
+
+        /// <summary>
+        /// Globally configures all messages to be sent as JSON rather than autodetecting if a message is supported by the flatbuffer codec. Defaults to false.
+        /// </summary>
+        public static bool ForceJsonForAllSentMessages = false;
 
         static readonly JsonSerializerSettings jsonResolverToDealWithEnums = new JsonSerializerSettings
         {
@@ -118,7 +124,18 @@ namespace Omukade.Cheyenne
 
             if (client.PlayerConnectionHelens != null)
             {
-                client.PlayerConnectionHelens.SendMessageEnquued_EXPERIMENTAL(payload, Platform.Sdk.SerializationFormat.JSON);
+                Platform.Sdk.SerializationFormat formatToUse;
+                if (ForceJsonForAllSentMessages)
+                {
+                    formatToUse = Platform.Sdk.SerializationFormat.JSON;
+                }
+                else
+                {
+                    bool isSupportedByFlatbufferEncoder = Platform.Sdk.Flatbuffers.Encoders.Map.ContainsKey(payload.GetType());
+                    formatToUse = isSupportedByFlatbufferEncoder ? Platform.Sdk.SerializationFormat.FlatBuffers : Platform.Sdk.SerializationFormat.JSON;
+                }
+
+                client.PlayerConnectionHelens.SendMessageEnquued_EXPERIMENTAL(payload, formatToUse);
             }
         }
 
@@ -140,7 +157,7 @@ namespace Omukade.Cheyenne
                     dataForConnection.PlayerId = sdm.PlayerId;
                     if (UserMetadata.TryGetValue(sdm.PlayerId, out PlayerMetadata existingPlayer))
                     {
-                        Console.WriteLine($"WARN: Trampling already-existing player metadata for PID {sdm.PlayerId} - display name {existingPlayer.PlayerDisplayName ?? "[no displayname]"}");
+                        this.ErrorHandler?.Invoke($"WARN: Trampling already-existing player metadata for PID {sdm.PlayerId} - display name {existingPlayer.PlayerDisplayName ?? "[no displayname]"}", null);
 #warning Due to the async nature of websockets, this might get messy.
                         existingPlayer.PlayerConnectionHelens.DisconnectClientImmediately();
                         existingPlayer.PlayerId = null; // FIXME: hack so we don't try to double-dispose of this player.
@@ -377,7 +394,7 @@ namespace Omukade.Cheyenne
             initiatingPlayer.DirectMatchMakingTransactionToken = default;
         }
 
-        private void StartGameBetweenTwoPlayers(PlayerMetadata playerOneMetadata, PlayerMetadata playerTwoMetadata)
+        internal string StartGameBetweenTwoPlayers(PlayerMetadata playerOneMetadata, PlayerMetadata playerTwoMetadata)
         {
             GameStateOmukade gameState = new GameStateOmukade(parentServerInstance: this)
             {
@@ -505,6 +522,7 @@ namespace Omukade.Cheyenne
             }
 
             ResolveOperation(gameState, bootstrapOperation);
+            return gameState.matchId;
         }
 
         private static ServerMessage CreatePlayerSelectionHelper(MatchOperation mo, PlayerSelection ps, string playerId, GameState state)
@@ -528,9 +546,7 @@ namespace Omukade.Cheyenne
             {
                 case OperationStatus.Error:
                     string invalidOperationErrorMessage = $"Error performing operation {currentOperation.operationID} on game {currentGameState.matchId} ({string.Join(" vs ", currentGameState.playerInfos.Select(p => p.playerName))})";
-#warning TODO: Consolidate logging
-                    Logging.WriteError(invalidOperationErrorMessage);
-                    ErrorHandler?.Invoke(invalidOperationErrorMessage, null);
+                    this.OnErrorHandler(invalidOperationErrorMessage, null);
                     return false;
 
                 case OperationStatus.WaitingForInput:
@@ -632,5 +648,7 @@ namespace Omukade.Cheyenne
             })
             .ToList();
         }
+
+        internal void OnErrorHandler(string message, Exception? e) => this.ErrorHandler?.Invoke(message, e);
     }
 }

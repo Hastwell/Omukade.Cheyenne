@@ -58,46 +58,27 @@ namespace Omukade.Cheyenne
                 Console.WriteLine("Config file not found; loading defaults");
                 config = new ConfigSettings();
             }
+           
+            // If no search folder defined OR local PTCGL install, try to fetch the current game update and use that.
+            Console.WriteLine("Checking for update...");
 
-            Console.WriteLine("Searching for PTCGL install...");
-            string? searchFolder = config.AutoParSearchFolder;
-            
-            if(!config.AutoParIgnoreLocalInstall)
+            AutoPAR.Rainier.UpdaterManifest updateManifest = AutoPAR.Rainier.RainierFetcher.GetUpdateManifestAsync().Result;
+            if(AutoPAR.Rainier.RainierFetcher.DoesNeedUpdate(updateManifest))
             {
-                searchFolder ??= AutoPAR.InstallationFinder.FindPtcglInstallAssemblyDirectory();
+                AutoPAR.Rainier.LocalizedReleaseNote releaseNote = AutoPAR.Rainier.RainierFetcher.GetLocalizedReleaseNoteAsync(updateManifest).Result;
+                Console.WriteLine($"Downloading update {releaseNote.Version} ({releaseNote.DateRaw})...");
+
+                AutoPAR.Rainier.RainierFetcher.DownloadUpdateFile(updateManifest).Wait();
+                AutoPAR.Rainier.RainierFetcher.ExtractUpdateFile(deleteExistingUpdateFolder: true);
             }
-
-            if (searchFolder == null)
+            else
             {
-                // If no search folder defined OR local PTCGL install, try to fetch the current game update and use that.
-                Console.WriteLine("Checking for update...");
-                AutoPAR.Rainier.RainierFetcher.UpdateFilename = config.AutoParUpdateFilename;
-                searchFolder = AutoPAR.Rainier.RainierFetcher.ComputedUpdateDirectory;
-
-                AutoPAR.Rainier.UpdaterManifest updateManifest = AutoPAR.Rainier.RainierFetcher.GetUpdateManifestAsync().Result;
-                if(AutoPAR.Rainier.RainierFetcher.DoesNeedUpdate(updateManifest))
-                {
-                    AutoPAR.Rainier.LocalizedReleaseNote releaseNote = AutoPAR.Rainier.RainierFetcher.GetLocalizedReleaseNoteAsync(updateManifest).Result;
-                    Console.WriteLine($"Downloading update {releaseNote.Version} ({releaseNote.DateRaw})...");
-
-                    AutoPAR.Rainier.RainierFetcher.DownloadUpdateFile(updateManifest).Wait();
-                    AutoPAR.Rainier.RainierFetcher.ExtractUpdateFile(deleteExistingUpdateFolder: true);
-                }
-                else
-                {
-                    Console.WriteLine("Current update is latest");
-                }
-            }
-
-            if(!Directory.Exists(searchFolder))
-            {
-                Console.Error.WriteLine($"AutoPAR Search Folder not found: {searchFolder ?? "[null]"}");
-                Environment.Exit(1);
+                Console.WriteLine("Current update is latest");
             }
 
             Console.WriteLine("Injecting AutoPAR...");
             AssemblyLoadInterceptor.ParCore.CecilProcessors.Add(Omukade.AutoPAR.Rainier.RainierSpecificPatches.MakeGameStateCloneVirtual);
-            AssemblyLoadInterceptor.Initialize(searchFolder);
+            AssemblyLoadInterceptor.Initialize(AutoPAR.Rainier.RainierFetcher.UpdateDirectory);
         }
 
         static private void Init()

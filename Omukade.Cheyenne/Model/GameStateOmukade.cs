@@ -6,8 +6,13 @@ namespace Omukade.Cheyenne.Model
     [Serializable]
     public class GameStateOmukade : GameState
     {
+        [NonSerialized]
         internal GameServerCore parentServerInstance;
+
+        [NonSerialized]
         internal PlayerMetadata? player1metadata;
+
+        [NonSerialized]
         internal PlayerMetadata? player2metadata;
 
         /// <summary>

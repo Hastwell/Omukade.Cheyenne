@@ -28,7 +28,7 @@ namespace Omukade.Cheyenne
     public class ConfigSettings
     {
         [JsonProperty(PropertyName = "carddata-directory")]
-        public string CardDataDirectory = "PTCGL-CardDefinitions";
+        public string CardDataDirectory = Path.Combine(AutoPAR.Rainier.RainierSharedDataHelper.GetSharedDataDirectory(), "PTCGL-CardDefinitions");
 
         [JsonProperty(PropertyName = "ws-port")]
         public int HttpPort = 10850;
@@ -50,15 +50,6 @@ namespace Omukade.Cheyenne
 
         [JsonProperty(PropertyName = "discord-error-webhook-url")]
         public string? DiscordErrorWebhookUrl = null;
-
-        [JsonProperty(PropertyName = "autopar-search-folder")]
-        public string? AutoParSearchFolder = null;
-
-        [JsonProperty(PropertyName = "autopar-ignore-local-install")]
-        public bool AutoParIgnoreLocalInstall = false;
-
-        [JsonProperty(PropertyName = "autopar-update-filename")]
-        public string AutoParUpdateFilename = AutoPAR.Rainier.RainierFetcher.UpdateFilename;
 
         public bool DebugLogAllMessages = true;
     }

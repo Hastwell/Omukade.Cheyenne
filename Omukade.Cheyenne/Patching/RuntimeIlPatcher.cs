@@ -173,7 +173,7 @@ namespace Omukade.Cheyenne.Patching
             }
             catch (Exception e)
             {
-                Console.WriteLine($"SendMessage Error :: {e.GetType().FullName} - {e.Message}");
+                gso.parentServerInstance.OnErrorHandler($"SendMessage Error :: {e.GetType().FullName} - {e.Message}", null);
                 throw;
             }
         }
@@ -270,9 +270,10 @@ namespace Omukade.Cheyenne.Patching
     [HarmonyPatch(typeof(GameState), nameof(GameState.CopyState))]
     static class GameStateCopyStateCrashes
     {
+        // The information loss mentioned here is PlayerMetadata containing connection information used to send players messages.
         [HarmonyPrefix]
         [HarmonyPatch]
-        static void Prefix() => throw new InvalidOperationException("Omukade: Use of GameState.CopyState is not valid and can cause information loss. Ensure the caller of this method is patched by ReceiveOperationUsesCopyStateVirtual");
+        static void Prefix() => throw new InvalidOperationException("Omukade: Use of GameState.CopyState is not valid and causes information loss. Ensure the caller of this method uses GameStateOmukade instances and isn't creating its own GameState objects.");
     }
 
     [HarmonyPatch(typeof(OfflineAdapter), nameof(OfflineAdapter.ReceiveOperation))]
