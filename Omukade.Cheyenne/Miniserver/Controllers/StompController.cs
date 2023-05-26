@@ -241,6 +241,17 @@ namespace Omukade.Cheyenne.Miniserver.Controllers
                             cts.Dispose();
                         }
                     }
+                    catch(WebSocketException e)
+                    {
+                        if(e.WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely)
+                        {
+                            // Swallow connection-closed-unexpectedly
+                        }
+                        else
+                        {
+                            throw;
+                        }
+                    }
                     finally
                     {
                         cts?.Dispose();

@@ -50,25 +50,25 @@ namespace Omukade.Cheyenne.Patching
         public const int RngSeed = 654654564;
 
         /// <summary>
-        /// Controls if this patch is applied. This has no effect once Harmony has finished patching. Once patched, RNG baking can be controlled using <see cref="ShouldBakeRng"/>.
-        /// Do not enable this patch unless needed (eg, testing), as there is minor performance impact.
+        /// Controls if this patch is applied. This has no effect once Harmony has finished patching. Once patched, RNG baking can be controlled using <see cref="UseInjectedRng"/>.
+        /// Do not enable this patch unless needed (eg, testing), as there is minor performance impact from the extra method call.
         /// </summary>
-        public static bool ShouldPatchRng = false;
+        public static bool InjectRngPatchAtAll = false;
 
         /// <summary>
-        /// If <see cref="ShouldPatchRng"/> is set, RNG calls for games will be controlled using this patch instead of using the built-in RNG. The built-in RNG can be enabled/disabled at any time by toggling this field.
+        /// If <see cref="InjectRngPatchAtAll"/> is set, RNG calls for games will be controlled using this patch instead of using the built-in RNG. The built-in RNG can be enabled/disabled at any time by toggling this field.
         /// </summary>
-        public static bool ShouldBakeRng = true;
+        public static bool UseInjectedRng = true;
 
         public static Random Rng = new Random(RngSeed);
 
         public static void ResetRng() => Rng = new Random(RngSeed);
 
-        static bool Prepare(MethodBase original) => ShouldBakeRng;
+        static bool Prepare(MethodBase original) => InjectRngPatchAtAll;
 
         static bool Prefix(ref int __result)
         {
-            if(!ShouldBakeRng)
+            if(!UseInjectedRng)
             {
                 return true;
             }

@@ -17,6 +17,8 @@
 **************************************************************************/
 
 using Mono.Cecil;
+using Omukade.Cheyenne.ClientConnections;
+using Omukade.Cheyenne.CustomMessages;
 using Omukade.Cheyenne.Shell.FakeClients;
 using Omukade.Cheyenne.Shell.Model;
 using SharedSDKUtils;
@@ -56,6 +58,10 @@ namespace Omukade.Cheyenne
                     case "players":
                         GetConnectedPlayers();
                         break;
+                    case "dgs":
+                    case "dumpgamestate":
+                        DumpGameState(cmdSplit[1]);
+                        break;
                     case "exit":
                     case "quit":
                     case "stop":
@@ -68,6 +74,11 @@ namespace Omukade.Cheyenne
             }
         }
 
+        static void DumpGameState(string gameId)
+        {
+            SendWsMessage(new DumpGameStateRequest(gameId));
+        }
+
         static void TerminateConsole()
         {
             bool stoppedInTime = StopWsServer().AsTask().Wait(10_000);
@@ -75,6 +86,12 @@ namespace Omukade.Cheyenne
 
             Console.WriteLine("Server did not stop with 10s; force-killing.");
             Environment.Exit(2);
+        }
+
+        static void SendWsMessage(object request)
+        {
+            DebugClientConnection debugClient = new DebugClientConnection();
+            receiveQueue.Enqueue(new Miniserver.Model.ReceivedMessage { ReceivedFrom = debugClient, Message = request });
         }
 
         static TResponse SendWsMessageAndWaitForResponse<TResponse>(object request)

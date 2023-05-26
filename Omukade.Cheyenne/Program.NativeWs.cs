@@ -16,6 +16,8 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **************************************************************************/
 
+using MatchLogic.source.MatchLogic.Utils.SerializationBinder;
+using Newtonsoft.Json;
 using Omukade.Cheyenne.ClientConnections;
 using Omukade.Cheyenne.CustomMessages;
 using Omukade.Cheyenne.Miniserver.Controllers;
@@ -29,6 +31,9 @@ using Spectre.Console;
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
+using Omukade.Cheyenne.Encoding;
 
 namespace Omukade.Cheyenne
 {
@@ -207,6 +212,12 @@ namespace Omukade.Cheyenne
                     case GetOnlinePlayersRequest:
                         ProcessConsoleGetOnlinePlayersMessage(controller);
                         break;
+                    case DumpGameStateRequest dgsr:
+                        if(controller.GetType() == typeof(DebugClientConnection))
+                        {
+                            ProcessDumpGameState(dgsr);
+                        }
+                        break;
                     default:
                         break;
                 }
@@ -215,6 +226,31 @@ namespace Omukade.Cheyenne
             {
                 AnsiConsole.WriteException(e);
                 messageWrapper.ReceivedFrom?.DisconnectClientImmediately();
+            }
+        }
+
+        private static void ProcessDumpGameState(DumpGameStateRequest dgsr)
+        {
+            if(serverCore.ActiveGamesById.TryGetValue(dgsr.gameId, out var concernedGame))
+            {
+                const string dumpFolder = "gamestate-dump";
+                Directory.CreateDirectory(dumpFolder);
+
+                string fname = Path.Combine(dumpFolder, $"gamestate-{dgsr.gameId}-{DateTime.UtcNow.Ticks}.json");
+                using (StreamWriter sw = new StreamWriter(fname))
+                {
+                    JsonSerializerSettings jss = new JsonSerializerSettings
+                    {
+                        TypeNameHandling = TypeNameHandling.Auto,
+                        ContractResolver = new WhitelistedContractResolver(),
+                        NullValueHandling = NullValueHandling.Ignore,
+                        DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate,
+                        SerializationBinder = new JsonSerializationBinder(),
+                        Formatting = Formatting.Indented,
+                    };
+                    jss.Converters.Add(new StringEnumConverter(new DefaultNamingStrategy(), allowIntegerValues: true));
+                    JsonSerializer.Create(jss).Serialize(sw, concernedGame);
+                }
             }
         }
 
