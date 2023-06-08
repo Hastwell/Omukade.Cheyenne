@@ -38,6 +38,16 @@ namespace Omukade.Cheyenne.Tests.BakedData
         public Uri ApiUrlBase { get; set; }
         public Uri ApiUrl(string api) => new Uri(ApiUrlBase, api);
 
+        public void RotateSimulatedLoadBalancer()
+        {
+            
+        }
+
+        public void RoundRobinWebsocketServicePorts(params string[] ports)
+        {
+            
+        }
+
         public void SelectWebsocketServicePort(string port)
         {
             

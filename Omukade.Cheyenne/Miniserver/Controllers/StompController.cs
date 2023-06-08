@@ -78,12 +78,14 @@ namespace Omukade.Cheyenne.Miniserver.Controllers
         const string HEADER_PAYLOAD = "pay";
         const string HEADER_RECEIPT = "receipt";
         const string HEADER_RECEIPT_ID = "receipt-id";
+        const string HEADER_INSTANCEID = "x-instance";
 
         static byte[] ENCODED_CONTENT_LENGTH_HEADER = System.Text.Encoding.UTF8.GetBytes(HEADER_CONTENT_LENGTH + ":");
         static byte[] ENCODED_CONTENT_TYPE_HEADER = System.Text.Encoding.UTF8.GetBytes(HEADER_CONTENT_TYPE + ":");
         static byte[] ENCODED_PAYLOAD_HEADER = System.Text.Encoding.UTF8.GetBytes(HEADER_PAYLOAD + ":");
         static byte[] ENCODED_RECEIPT_HEADER = System.Text.Encoding.UTF8.GetBytes(HEADER_RECEIPT + ":");
         static byte[] ENCODED_RECEIPTID_HEADER = System.Text.Encoding.UTF8.GetBytes(HEADER_RECEIPT_ID + ":");
+        static byte[] ENCODED_INSTANCEID_HEADER = System.Text.Encoding.UTF8.GetBytes(HEADER_INSTANCEID + ":");
 
         /// <summary>
         /// 
@@ -162,8 +164,7 @@ namespace Omukade.Cheyenne.Miniserver.Controllers
             }
             else if(format == SerializationFormat.FlatBuffers)
             {
-#warning Flatbuffer serialization is a total hackjob
-                ReusableBuffer rub = encodeFlatbuffer.Invoke(payload);
+                ReusableBuffer rub = CodecUtil.Flatbuffers.Serialize(payload);
                 rawMessage = new StompFrameWithData
                 {
                     frameHeaders = new StompFrame
@@ -230,7 +231,7 @@ namespace Omukade.Cheyenne.Miniserver.Controllers
                                     if(receivedMessage is HeartbeatPayload)
                                     {
                                         LastMessageReceived = DateTime.UtcNow;
-                                        SendMessageEnquued_EXPERIMENTAL(new HeartbeatPayload { timeSent = LastMessageReceived.Ticks });
+                                        SendMessageEnquued_EXPERIMENTAL(new HeartbeatPayload { timeSent = new DateTimeOffset(LastMessageReceived).ToUnixTimeMilliseconds() });
                                     }
                                     else if (MessageReceived != null) await MessageReceived.Invoke(this, receivedMessage);
                                 }
@@ -267,7 +268,7 @@ namespace Omukade.Cheyenne.Miniserver.Controllers
 
         internal static object? ProcessReceivedMessage(byte[] accumulator, ref int accumulatorPosition)
         {
-            const int MAX_HEADERS_TO_READ = 6;
+            const int MAX_HEADERS_TO_READ = 7;
             // Read off command
 
             Span<byte> receivedBuffer = accumulator.AsSpan(0, accumulatorPosition);
@@ -482,7 +483,31 @@ namespace Omukade.Cheyenne.Miniserver.Controllers
 
         internal static object? DecodeStompMessageToObject(StompFrame header, byte[] originalArray, int offset, int length)
         {
-            if(header.ContentType == "application/json")
+            if(header.Command != "SEND")
+            {
+                return null;
+            }
+
+            if (header.ContentType == null || header.ContentType == "application/octet-stream")
+            {
+                ByteBuffer bb = new ByteBuffer(originalArray, offset);
+
+                return header.Payload switch
+                {
+                    nameof(Platform.Sdk.Models.GameServer.GameMessage) => ServersideFlatbufferEncoders.DecodeGameMessage(bb),
+                    nameof(Platform.Sdk.Models.Matchmaking.AcceptDirectMatch) => ServersideFlatbufferEncoders.DecodeAcceptDirectMatch(bb),
+                    nameof(Platform.Sdk.Models.Matchmaking.CancelDirectMatch) => ServersideFlatbufferEncoders.DecodeCancelDirectMatch(bb),
+                    nameof(Platform.Sdk.Models.Matchmaking.ProposeDirectMatch) => ServersideFlatbufferEncoders.DecodeProposeDirectMatch(bb),
+                    nameof(Platform.Sdk.Models.Matchmaking.BeginMatchmaking) => ServersideFlatbufferEncoders.DecodeBeginMatchmaking(bb),
+                    nameof(Platform.Sdk.Models.Matchmaking.CancelMatchmaking) => ServersideFlatbufferEncoders.DecodeCancelMatchmaking(bb),
+                    nameof(Platform.Sdk.Models.Query.QueryMessage) => ServersideFlatbufferEncoders.DecodeQueryMessage(bb),
+                    nameof(Platform.Sdk.Models.User.DataStoreSaveRequest) => ServersideFlatbufferEncoders.DecodeDataStoreSaveRequest(bb),
+                    nameof(HeartbeatPayload) => ServersideFlatbufferEncoders.DecodeHeartbeatPayload(bb),
+                    nameof(PingPayload) => Platform.Sdk.Flatbuffers.Decoders.DecodePingPayload(bb),
+                    _ => throw new IllegalPacketReceivedException($"Unknown Flatbuffer message type {header.Payload}")
+                };
+            }
+            else if(header.ContentType == "application/json")
             {
                 string jsonPayload = System.Text.Encoding.UTF8.GetString(originalArray, offset, length);
 
@@ -499,25 +524,8 @@ namespace Omukade.Cheyenne.Miniserver.Controllers
                     nameof(SupplementalDataMessageV2) => JsonConvert.DeserializeObject<SupplementalDataMessageV2>(jsonPayload),
                     nameof(GetOnlineFriends) => JsonConvert.DeserializeObject<GetOnlineFriends>(jsonPayload),
                     nameof(HeartbeatPayload) => JsonConvert.DeserializeObject<HeartbeatPayload>(jsonPayload),
+                    nameof(PingPayload) => JsonConvert.DeserializeObject<PingPayload>(jsonPayload),
                     _ => throw new IllegalPacketReceivedException($"Unknown JSON message type {header.Payload}")
-                };
-            }
-            else if(header.ContentType == "application/octet-stream")
-            {
-                ByteBuffer bb = new ByteBuffer(originalArray, offset);
-
-                return header.Payload switch
-                {
-                    nameof(Platform.Sdk.Models.GameServer.GameMessage) => ServersideFlatbufferEncoders.DecodeGameMessage(bb),
-                    nameof(Platform.Sdk.Models.Matchmaking.AcceptDirectMatch) => ServersideFlatbufferEncoders.DecodeAcceptDirectMatch(bb),
-                    nameof(Platform.Sdk.Models.Matchmaking.CancelDirectMatch) => ServersideFlatbufferEncoders.DecodeCancelDirectMatch(bb),
-                    nameof(Platform.Sdk.Models.Matchmaking.ProposeDirectMatch) => ServersideFlatbufferEncoders.DecodeProposeDirectMatch(bb),
-                    nameof(Platform.Sdk.Models.Matchmaking.BeginMatchmaking) => ServersideFlatbufferEncoders.DecodeBeginMatchmaking(bb),
-                    nameof(Platform.Sdk.Models.Matchmaking.CancelMatchmaking) => ServersideFlatbufferEncoders.DecodeCancelMatchmaking(bb),
-                    nameof(Platform.Sdk.Models.Query.QueryMessage) => ServersideFlatbufferEncoders.DecodeQueryMessage(bb),
-                    nameof(Platform.Sdk.Models.User.DataStoreSaveRequest) => ServersideFlatbufferEncoders.DecodeDataStoreSaveRequest(bb),
-                    nameof(HeartbeatPayload) => ServersideFlatbufferEncoders.DecodeHeartbeatPayload(bb),
-                    _ => throw new IllegalPacketReceivedException($"Unknown Flatbuffer message type {header.Payload}")
                 };
             }
             else

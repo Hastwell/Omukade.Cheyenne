@@ -63,9 +63,7 @@ namespace Omukade.Cheyenne.Tests
 
         public WebsocketBasicTests()
         {
-            //RegisterDecoders();
             RegisterEncoders();
-
 
             // Initialize the BufferPool or the FlatBuffer serializer will do dumb shit like get stuck in a while(true) loop
             // while working on a zero-length buffer.
@@ -85,11 +83,6 @@ namespace Omukade.Cheyenne.Tests
             encoderMap[typeof(QueryMessage)] = new Action<object, FlatBufferBuilder>(EncodeQueryMessage);
         }
 
-        static object DecodeHeartbeatMessage(ByteBuffer bb)
-        {
-            com.pokemon.studio.contracts.client_websocket.HeartbeatPayload rootAsHeartbeatPayload = com.pokemon.studio.contracts.client_websocket.HeartbeatPayload.GetRootAsHeartbeatPayload(bb);
-            return new Platform.Sdk.Models.WebSocket.HeartbeatPayload() { timeSent = rootAsHeartbeatPayload.TimeSent };
-        }
         static void EncodeQueryMessage(object obj, FlatBufferBuilder builder)
         {
             QueryMessage qm = (QueryMessage)obj;
@@ -134,7 +127,9 @@ namespace Omukade.Cheyenne.Tests
                 }
             };
 
-            WebsocketWrapper wsw = new WebsocketWrapper(logger: new NopClientLogger(), router, token: fakeTokenHolder, dispatcher: md, CODEC_TO_USE, settings: wsSettings, enableHeartbeats: false, enableMessageReceipts: false, null);
+            WebsocketWrapper wsw = new WebsocketWrapper(logger: new NopClientLogger(), router, token: fakeTokenHolder, dispatcher: md, CODEC_TO_USE, settings: wsSettings, enableHeartbeats: false,
+                enableMessageReceipts: false, enableMessageLogging: false, onNetworkStatusChange: null, onServerTimeAvailable: null);
+
             try
             {
                 wsw.OpenAsync().Wait();
@@ -149,7 +144,31 @@ namespace Omukade.Cheyenne.Tests
 
             Assert.True(receivedServerToClientMessage, "Server to client message was not received");
         }
-       
+
+        [Theory]
+        [InlineData(SerializationFormat.JSON)]
+        [InlineData(SerializationFormat.FlatBuffers)]
+        public void SerializationRoundTrip(SerializationFormat FORMAT_TO_USE)
+        {
+            const string QUERY_ID_TO_USE = Omukade.Cheyenne.Program.REFLECT_MESSAGE_MAGIC;
+            byte[] PAYLOAD_TO_USE = new byte[] { (byte)FORMAT_TO_USE };
+
+            ICodec codecToUse = CodecUtil.Codec(FORMAT_TO_USE);
+
+            ReusableBuffer encodeRub = codecToUse.Serialize(new QueryMessage { queryId = QUERY_ID_TO_USE, message = PAYLOAD_TO_USE });
+
+            ArraySegment<byte> serializedContent = encodeRub.ContentSegment;
+
+            ReusableBuffer decodeRub = new ReusableBuffer(encodeRub.ContentSegment.Count);
+            decodeRub.Stream.Write(serializedContent);
+            decodeRub.Position = 0;
+
+            QueryMessage actualPayload = codecToUse.Deserialize<QueryMessage>(decodeRub);
+            Assert.Equal(QUERY_ID_TO_USE, actualPayload.queryId);
+            Assert.Equal(PAYLOAD_TO_USE, actualPayload.message);
+        }
+
+
         [Fact]
         public void SingleClientCanCommunicateMultiplePackets()
         {
@@ -178,7 +197,9 @@ namespace Omukade.Cheyenne.Tests
                 if (messagesYetToBeReceived.Count == 0) allMessagesReceived.Set();
             };
 
-            WebsocketWrapper wsw = new WebsocketWrapper(logger: new NopClientLogger(), router, token: fakeTokenHolder, dispatcher: md, CODEC_TO_USE, settings: wsSettings, enableHeartbeats: false, enableMessageReceipts: false, null);
+            WebsocketWrapper wsw = new WebsocketWrapper(logger: new NopClientLogger(), router, token: fakeTokenHolder, dispatcher: md, CODEC_TO_USE, settings: wsSettings, enableHeartbeats: false, 
+                enableMessageReceipts: false, enableMessageLogging: false, onNetworkStatusChange: null, onServerTimeAvailable: null);
+
             bool receivedSignal = false;
             try
             {
