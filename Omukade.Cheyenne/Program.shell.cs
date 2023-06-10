@@ -67,6 +67,9 @@ namespace Omukade.Cheyenne
                     case "stop":
                         TerminateConsole();
                         return;
+                    case "help":
+                        ShowHelp();
+                        break;
                     default:
                         AnsiConsole.WriteLine($"Unknown command: {cmdName}");
                         break;
@@ -107,7 +110,7 @@ namespace Omukade.Cheyenne
         {
             GetCurrentGamesResponse ongoingGames = SendWsMessageAndWaitForResponse<GetCurrentGamesResponse>(new GetCurrentGamesRequest());
 
-            Console.WriteLine($"Number of games: {ongoingGames.ongoingGames.Count}");
+            Console.WriteLine($"{ongoingGames.ongoingGames.Count} games in progress:");
             var ongoingGamesTable = new Table();
             ongoingGamesTable.AddColumn("Game ID");
             ongoingGamesTable.AddColumn("Player 1");
@@ -137,6 +140,16 @@ namespace Omukade.Cheyenne
 
             AnsiConsole.Write(onlinePlayersTable);
         }
+
+        static void ShowHelp()
+        {
+            Console.WriteLine("Available Commands:");
+            Console.WriteLine("exit / quit / stop / CTRL-C\tStops the server.");
+            Console.WriteLine("games\tLists current games.");
+            Console.WriteLine("players\tLists currently connected players.");
+            Console.WriteLine("dgs / dumpgamestate [gameid]\tDumps an in-progress game.");
+        }
+
         private static void Console_CancelKeyPress(object? sender, ConsoleCancelEventArgs e)
         {
             Console.WriteLine("CTRL-C received; preparing to stop");
