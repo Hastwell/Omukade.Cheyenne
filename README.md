@@ -34,9 +34,10 @@ The default port the server uses is 10850. 10851 will be used in the future to p
 * carddata-directory - The folder containing all game rules downloaded by Rainier Card Definition Fetcher. Defaults to `PTCGL-CardDefinitions` under the server's directory.
 * ws-port - The port to run the server on. Defaults to 10850.
 * cardsource-overrides-enable - Enables experimental support for overriding card definitions with custom versions.
-* cardsource-overrides-directory - The directory to search for card definition overrides. Defaults to `overrides`
-* discord-error-webhook-enable - Enables support for notifing server operators of errors via a Discord webhook. Default is `false`
-* discord-error-webhook-url - The URL to use for the Discord error webhook. **Required if** discord-error-webhook-enable is `true`
+* cardsource-overrides-directory - The directory to search for card definition overrides. Defaults to `overrides`.
+* discord-error-webhook-enable - Enables support for notifing server operators of errors via a Discord webhook. Default is `false`.
+* discord-error-webhook-url - The URL to use for the Discord error webhook. **Required if** discord-error-webhook-enable is `true`.
+* enable-reporting-all-implemented-cards - Whether to enable reporting all implemented expanded cards to clients. Default is `true`.
 
 ## Compiling
 

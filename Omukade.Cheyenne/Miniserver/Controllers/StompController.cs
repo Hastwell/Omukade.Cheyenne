@@ -525,6 +525,7 @@ namespace Omukade.Cheyenne.Miniserver.Controllers
                     nameof(GetOnlineFriends) => JsonConvert.DeserializeObject<GetOnlineFriends>(jsonPayload),
                     nameof(HeartbeatPayload) => JsonConvert.DeserializeObject<HeartbeatPayload>(jsonPayload),
                     nameof(PingPayload) => JsonConvert.DeserializeObject<PingPayload>(jsonPayload),
+                    nameof(GetImplementedExpandedCardsV1) => JsonConvert.DeserializeObject<GetImplementedExpandedCardsV1>(jsonPayload),
                     _ => throw new IllegalPacketReceivedException($"Unknown JSON message type {header.Payload}")
                 };
             }

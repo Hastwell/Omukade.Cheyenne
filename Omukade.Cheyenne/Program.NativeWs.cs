@@ -193,6 +193,9 @@ namespace Omukade.Cheyenne
                         }
                         serverCore.HandleSupplementalDataMessage(sdmv2, controller.Tag);
                         break;
+                    case GetImplementedExpandedCardsV1 giecV1:
+                        serverCore.HandleGetSupportedExpandedCards(controller.Tag, giecV1);
+                        break;
                     case GetOnlineFriends gof:
                         OnlineFriendsResponse ofr;
                         if (gof.FriendIds == null || gof.FriendIds.Count == 0)

@@ -51,6 +51,9 @@ namespace Omukade.Cheyenne
         [JsonProperty(PropertyName = "discord-error-webhook-url")]
         public string? DiscordErrorWebhookUrl = null;
 
+        [JsonProperty(PropertyName = "enable-reporting-all-implemented-cards")]
+        public bool EnableReportingAllImplementedCards = true;
+
         public bool DebugLogAllMessages = true;
     }
 }

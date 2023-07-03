@@ -26,6 +26,7 @@ using Platform.Sdk.Models.GameServer;
 using Platform.Sdk.Models.Matchmaking;
 using Platform.Sdk.Models.Query;
 using RainierClientSDK;
+using RainierClientSDK.source.Player;
 using SharedLogicUtils.DataTypes;
 using SharedLogicUtils.source.Services.Query.Contexts;
 using SharedSDKUtils;
@@ -74,9 +75,33 @@ namespace Omukade.Cheyenne
         internal Dictionary<string, GameStateOmukade> ActiveGamesById = new Dictionary<string, GameStateOmukade>(10);
         Queue<string> PlayersInQueue = new Queue<string>(2);
 
+        private ImplementedExpandedCardsV1 expandedImplementedCards_ChecksumMatchesResponse;
+        private ImplementedExpandedCardsV1 expandedImplementedCards_FullDataResponse;
+
         public GameServerCore(ConfigSettings settings)
         {
             this.config = settings;
+
+            // Prepare compressed Implemented Cards message
+            IEnumerable<string> implementedCardNames;
+            
+            if(this.config.EnableReportingAllImplementedCards)
+            {
+                implementedCardNames = Directory.GetDirectories(config.CardDataDirectory)
+                .Where(dir => !dir.StartsWith('.'))
+                .SelectMany(dir => Directory.GetFiles(dir, "*.json"))
+                .Select(fname => Path.GetFileNameWithoutExtension(fname));
+            }
+            else
+            {
+                implementedCardNames = new string[1] { "feature-disabled" };
+            }
+
+            this.expandedImplementedCards_FullDataResponse = new ImplementedExpandedCardsV1()
+            {
+                ImplementedCardNames = implementedCardNames
+            };
+            this.expandedImplementedCards_ChecksumMatchesResponse = new ImplementedExpandedCardsV1 { Checksum = this.expandedImplementedCards_FullDataResponse.Checksum };
         }
 
         public static void PatchRainier()
@@ -345,6 +370,18 @@ namespace Omukade.Cheyenne
 
                 // TODO: send the matchaccepted message to the initiating player
                 StartGameBetweenTwoPlayers(initiatingPlayerMetadata, player);
+            }
+        }
+
+        public void HandleGetSupportedExpandedCards(PlayerMetadata? player, GetImplementedExpandedCardsV1 giecV1)
+        {
+            if (giecV1.Checksum == this.expandedImplementedCards_FullDataResponse.Checksum)
+            {
+                SendPacketToClient(player, expandedImplementedCards_ChecksumMatchesResponse);
+            }
+            else
+            {
+                SendPacketToClient(player, expandedImplementedCards_FullDataResponse);
             }
         }
 
