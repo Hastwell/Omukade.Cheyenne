@@ -39,6 +39,9 @@ namespace Omukade.Cheyenne
         {
             // Default behavior is log only WARN | ERROR to console. Creating an instance sets the global logger to this instance, and buffers log messages.
             // RainierServiceLogger.instance = new RainierServiceLogger(RainierServiceLogger.LogLevel.WARNING | RainierServiceLogger.LogLevel.ERROR, _ => RainierServiceLogger.Clear());
+
+            // Setting CardCache.isServer causes it to bypass a mutex lock that is unneeded in the single-thread Cheyenne
+            CardCache.isServer = true;
         }
 
         static bool rainerAlreadyPatched;
@@ -115,8 +118,8 @@ namespace Omukade.Cheyenne
         
         public static void RefreshSharedGameRules(ConfigSettings settings)
         {
-            GameDataCacheMessage gameDataCache = GetBakedGameData(settings);
             GameDataCache.Clear();
+            GameDataCacheMessage gameDataCache = GetBakedGameDataForMode(settings, GameMode.Base);
             GameDataCache.AddCachedObjects(gameDataCache);
             precompressedGameRules = MessageExtensions.PrecompressObject(gameDataCache);
         }
@@ -133,9 +136,9 @@ namespace Omukade.Cheyenne
             }
         }
 
-        static GameDataCacheMessage GetBakedGameData(ConfigSettings config)
+        static GameDataCacheMessage GetBakedGameDataForMode(ConfigSettings config, GameMode mode)
         {
-            GameDataCacheMessage gdcm = JsonConvert.DeserializeObject<GameDataCacheMessage>(File.ReadAllText(Path.Combine(config.CardDataDirectory, $"game-data-{nameof(GameMode.Standard)}.json")), DeserializeResolver.settings)!;
+            GameDataCacheMessage gdcm = JsonConvert.DeserializeObject<GameDataCacheMessage>(File.ReadAllText(Path.Combine(config.CardDataDirectory, $"game-data-{mode.ToString()}.json")), DeserializeResolver.settings)!;
             return gdcm;
         }
 
