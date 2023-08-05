@@ -436,6 +436,11 @@ namespace Omukade.Cheyenne
 
         internal string StartGameBetweenTwoPlayers(PlayerMetadata playerOneMetadata, PlayerMetadata playerTwoMetadata)
         {
+            if(config.DebugFixedRngSeed)
+            {
+                Patching.MatchOperationGetRandomSeedIsDeterministic.ResetRng();
+            }
+
             GameStateOmukade gameState = new GameStateOmukade(parentServerInstance: this)
             {
                 matchId = Guid.NewGuid().ToString(),

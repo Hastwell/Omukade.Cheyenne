@@ -54,6 +54,7 @@ namespace Omukade.Cheyenne
         [JsonProperty(PropertyName = "enable-reporting-all-implemented-cards")]
         public bool EnableReportingAllImplementedCards = true;
 
-        public bool DebugLogAllMessages = true;
+        [JsonProperty(PropertyName = "debug-fixed-rng-seed")]
+        public bool DebugFixedRngSeed = false;
     }
 }
