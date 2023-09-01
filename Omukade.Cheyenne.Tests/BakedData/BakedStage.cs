@@ -42,6 +42,11 @@ namespace Omukade.Cheyenne.Tests.BakedData
             throw new NotImplementedException();
         }
 
+        public Route RouteForRegion(string region, string primeRoute)
+        {
+            throw new NotImplementedException();
+        }
+
         public Route RouteForResponse(QueryRouteResponse routeResponse)
         {
             throw new NotImplementedException();

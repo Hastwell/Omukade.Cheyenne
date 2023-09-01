@@ -38,6 +38,11 @@ namespace Omukade.Cheyenne.Tests.BakedData
         public Uri ApiUrlBase { get; set; }
         public Uri ApiUrl(string api) => new Uri(ApiUrlBase, api);
 
+        public Uri PrimeRegionApiUrl(string api)
+        {
+            throw new NotImplementedException();
+        }
+
         public void RotateSimulatedLoadBalancer()
         {
             

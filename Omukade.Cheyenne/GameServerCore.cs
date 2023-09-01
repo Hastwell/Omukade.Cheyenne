@@ -341,7 +341,7 @@ namespace Omukade.Cheyenne
                 FriendDirectMatchContext fdmc = Platform.Sdk.Util.Utils.FromJsonBytes<FriendDirectMatchContext>(pdm.context);
                 MatchSharedContext msc = new MatchSharedContext { gameMode = fdmc.gameMode, matchTime = fdmc.matchTime, useAutoSelect = fdmc.useAutoSelect, useMatchTimer = fdmc.useMatchTimer, useOperationTimer = fdmc.useOperationTimer };
                 byte[] mscBytes = Platform.Sdk.Util.Utils.ToJsonBytes(msc);
-                SendPacketToClient(targetPlayerData, new DirectMatchInvitation(sourceAccountId: player.PlayerId, mmToken: player.DirectMatchMakingToken, issuedAt: DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), sharedContext: mscBytes, signature: DUMMY_EMPTY_SIGNATURE));
+                SendPacketToClient(targetPlayerData, new DirectMatchInvitation(sourceAccountId: player.PlayerId, mmToken: player.DirectMatchMakingToken, issuedAt: DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), sharedContext: mscBytes, signature: DUMMY_EMPTY_SIGNATURE, clientVersion: string.Empty, timeOffsetSeconds: 0L));
             }
             else if (message is CancelDirectMatch cdm)
             {
@@ -672,7 +672,7 @@ namespace Omukade.Cheyenne
         {
             return cardsToFetch.Select(cardname =>
             {
-                if (config.CardSourceOverridesEnable)
+                if (config.CardSourceOverridesEnable && config.CardSourceOverridesDirectory != null)
                 {
                     string overrideFname = Path.Combine(config.CardSourceOverridesDirectory, cardname + ".json");
                     if (File.Exists(overrideFname))

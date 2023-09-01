@@ -56,5 +56,15 @@ namespace Omukade.Cheyenne
 
         [JsonProperty(PropertyName = "debug-fixed-rng-seed")]
         public bool DebugFixedRngSeed = false;
+
+        public const string CardDefinitionFetcherJsonPropertyName = "card-definition-fetcher-path";
+        [JsonProperty(PropertyName = CardDefinitionFetcherJsonPropertyName)]
+        public string? CardDefinitionFetcherPath;
+
+        [JsonProperty(PropertyName = "autopar-autodetect-rainier-install-directory")]
+        public bool? AutoparAutodetectRainier = false;
+
+        [JsonProperty(PropertyName = "autopar-search-directory")]
+        public string? AutoparGameInstallOverrideDirectory;
     }
 }

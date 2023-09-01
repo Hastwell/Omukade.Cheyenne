@@ -107,7 +107,7 @@ namespace Omukade.Cheyenne.Encoding
 
         static DirectMatchInvitation? DecodeDirectMatchInvitationModel(com.pokemon.studio.contracts.client_matchmaker.DirectMatchInvitation? dmiModel)
         {
-            DirectMatchInvitation? dmi = dmiModel == null ? null : new DirectMatchInvitation(dmiModel.Value.SourceAccountId, dmiModel.Value.MmToken, dmiModel.Value.IssuedAt, dmiModel.Value.GetSharedContextBytes()?.ToArray(), dmiModel.Value.GetSignatureBytes()?.ToArray());
+            DirectMatchInvitation? dmi = dmiModel == null ? null : new DirectMatchInvitation(dmiModel.Value.SourceAccountId, dmiModel.Value.MmToken, dmiModel.Value.IssuedAt, dmiModel.Value.ClientVersion, dmiModel.Value.TimeOffsetSeconds, dmiModel.Value.GetSharedContextBytes()?.ToArray(), dmiModel.Value.GetSignatureBytes()?.ToArray());
             return dmi;
         }
     }
