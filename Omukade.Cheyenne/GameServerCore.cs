@@ -61,10 +61,7 @@ namespace Omukade.Cheyenne
             Converters = new List<JsonConverter>() { new Newtonsoft.Json.Converters.StringEnumConverter(new Newtonsoft.Json.Serialization.DefaultNamingStrategy(), allowIntegerValues: true) }
         };
 
-        static readonly Dictionary<string, bool> FEATURE_FLAGS_TO_USE = new Dictionary<string, bool>
-        {
-            {"RuleChanges2023", true } // Enables SV behavior for Pokemon Tools as seperate type of trainer vs pre-SV "Tools are also Items"
-        };
+        public static Dictionary<string, bool> FeatureFlags = new Dictionary<string, bool>(0);
 
         private static readonly byte[] DUMMY_EMPTY_SIGNATURE = Array.Empty<byte>();
         private static byte[] precompressedGameRules;
@@ -122,6 +119,14 @@ namespace Omukade.Cheyenne
             GameDataCacheMessage gameDataCache = GetBakedGameDataForMode(settings, GameMode.Base);
             GameDataCache.AddCachedObjects(gameDataCache);
             precompressedGameRules = MessageExtensions.PrecompressObject(gameDataCache);
+
+            LoadFeatureFlags(settings);
+        }
+
+        private static void LoadFeatureFlags(ConfigSettings config)
+        {
+            Dictionary<string, Dictionary<string, bool>> rawNestedDoc = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, bool>>>(File.ReadAllText(Path.Combine(config.CardDataDirectory, "feature-flags.json")))!;
+            FeatureFlags = rawNestedDoc["featureMap"];
         }
 
         private static void EnsurePlayerDataForMatch(PlayerMetadata playerData)
@@ -241,11 +246,18 @@ namespace Omukade.Cheyenne
 
             GameStateOmukade currentGame = (GameStateOmukade) player.CurrentGame;
 
+            if(smg.messageType is MessageType.ChangeCoinState or MessageType.ChangeDeckOrder)
+            {
+                throw new InvalidOperationException($"Player {player.PlayerDisplayName ?? "[null]"} sent the single-player-only cheat operation {smg.messageType}.");
+            }
+
             switch (smg.messageType)
             {
                 case MessageType.MatchOperation:
                 case MessageType.MatchInput:
                 case MessageType.MatchInputUpdate:
+                // case MessageType.ChangeCoinState:
+                // case MessageType.ChangeDeckOrder:
                     OfflineAdapter.ReceiveOperation(player.PlayerId, currentGame, smg);
                     break;
                 case MessageType.SendEmote:
@@ -520,7 +532,7 @@ namespace Omukade.Cheyenne
             gameState.playerInfos[PLAYER_TWO].playerID, gameState.playerInfos[PLAYER_TWO].playerName,
             deckListP2.ToArray(), 1500f, p2UseMatchTimer: gameState.playerInfos[PLAYER_TWO].settings.useMatchTimer, p2UseOperationTimer: gameState.playerInfos[PLAYER_TWO].settings.useOperationTimer, gameState.playerInfos[PLAYER_TWO].settings.useAutoSelect,
             MatchMode.Standard, prizeCount: 6, debug: gameState.CanUseDebug,
-            featureFlags: FEATURE_FLAGS_TO_USE);
+            featureFlags: FeatureFlags);
 
             bootstrapOperation.QueuePlayerOperation();
             bootstrapOperation.Handle();
@@ -547,7 +559,7 @@ namespace Omukade.Cheyenne
                     offlineMatch = false,
                     useAI = false,
                     clearCache = true,
-                    featureSet = FEATURE_FLAGS_TO_USE
+                    featureSet = FeatureFlags
                 };
 
                 ServerMessage prebakedRulesMessage = new ServerMessage(MessageType.GameData, string.Empty, currentPlayerInfo.playerID, bootstrapOperation.operationID, gameState.matchId)

@@ -127,8 +127,10 @@ namespace Omukade.Cheyenne.Tests
                 }
             };
 
-            WebsocketWrapper wsw = new WebsocketWrapper(logger: new NopClientLogger(), router, token: fakeTokenHolder, dispatcher: md, CODEC_TO_USE, settings: wsSettings, enableHeartbeats: false,
-                enableMessageReceipts: false, enableMessageLogging: false, onNetworkStatusChange: null, onServerTimeAvailable: null);
+            WebsocketPersistent wsp = new WebsocketPersistent(enableHeartbeats: false, enableMessageReceipts: false, enableMessageLogging: false);
+
+            WebsocketWrapper wsw = new WebsocketWrapper(logger: new NopClientLogger(), router, token: fakeTokenHolder, dispatcher: md, CODEC_TO_USE, settings: wsSettings, persistent: wsp,
+                onNetworkStatusChange: null, onServerTimeAvailable: null);
 
             try
             {
@@ -197,8 +199,11 @@ namespace Omukade.Cheyenne.Tests
                 if (messagesYetToBeReceived.Count == 0) allMessagesReceived.Set();
             };
 
-            WebsocketWrapper wsw = new WebsocketWrapper(logger: new NopClientLogger(), router, token: fakeTokenHolder, dispatcher: md, CODEC_TO_USE, settings: wsSettings, enableHeartbeats: false, 
-                enableMessageReceipts: false, enableMessageLogging: false, onNetworkStatusChange: null, onServerTimeAvailable: null);
+
+            WebsocketPersistent wsp = new WebsocketPersistent(enableHeartbeats: false, enableMessageReceipts: false, enableMessageLogging: false);
+
+            WebsocketWrapper wsw = new WebsocketWrapper(logger: new NopClientLogger(), router, token: fakeTokenHolder, dispatcher: md, CODEC_TO_USE, settings: wsSettings, persistent: wsp,
+                onNetworkStatusChange: null, onServerTimeAvailable: null);
 
             bool receivedSignal = false;
             try

@@ -66,5 +66,8 @@ namespace Omukade.Cheyenne
 
         [JsonProperty(PropertyName = "autopar-search-directory")]
         public string? AutoparGameInstallOverrideDirectory;
+
+        [JsonProperty(PropertyName = "run-as-daemon")]
+        public bool RunAsDaemon = false;
     }
 }

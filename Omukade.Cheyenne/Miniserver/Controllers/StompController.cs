@@ -113,7 +113,7 @@ namespace Omukade.Cheyenne.Miniserver.Controllers
             CancellationTokenSource cts = new CancellationTokenSource(WS_TIMEOUT_MS);
             try
             {
-                await ws.SendAsync(bytesToSend, WebSocketMessageType.Binary, endOfMessage: true, cts.Token);
+                await ws.SendAsync(bytesToSend, WebSocketMessageType.Binary, endOfMessage: true, cts.Token).ConfigureAwait(continueOnCapturedContext: false);
             }
             catch(Exception e)
             {
@@ -181,7 +181,7 @@ namespace Omukade.Cheyenne.Miniserver.Controllers
                 throw new NotImplementedException($"Unknown serializer format {format} not implemented!");
             }
 
-            await SendMessageAsync(rawMessage);
+            await SendMessageAsync(rawMessage).ConfigureAwait(continueOnCapturedContext: false);
         }
 
         public void DisconnectClientImmediately()
@@ -205,9 +205,9 @@ namespace Omukade.Cheyenne.Miniserver.Controllers
             {
                 Response.Headers["Omukade"] = "Cheyenne w/ Helens WS Logic";
 
-                using (ws = await HttpContext.WebSockets.AcceptWebSocketAsync())
+                using (ws = await HttpContext.WebSockets.AcceptWebSocketAsync().ConfigureAwait(continueOnCapturedContext: false))
                 {
-                    if (ClientConnected != null) await ClientConnected(this);
+                    if (ClientConnected != null) await ClientConnected(this).ConfigureAwait(continueOnCapturedContext: false);
 
                     byte[] messageAccumulatorBuffer = new byte[MESSAGE_ACCUMULATOR_BUFFER_SIZE];
                     int messageAccumulatorPosition = 0;
@@ -216,7 +216,7 @@ namespace Omukade.Cheyenne.Miniserver.Controllers
                     try
                     {
                         cts = new CancellationTokenSource(WS_TIMEOUT_MS);
-                        WebSocketReceiveResult? receiveResult = await ws.ReceiveAsync(new ArraySegment<byte>(messageAccumulatorBuffer), cts.Token);
+                        WebSocketReceiveResult? receiveResult = await ws.ReceiveAsync(new ArraySegment<byte>(messageAccumulatorBuffer), cts.Token).ConfigureAwait(continueOnCapturedContext: false);
                         cts.Dispose();
 
                         while (!receiveResult.CloseStatus.HasValue && (ws.State == WebSocketState.Open || ws.State == WebSocketState.CloseReceived))
@@ -233,12 +233,13 @@ namespace Omukade.Cheyenne.Miniserver.Controllers
                                         LastMessageReceived = DateTime.UtcNow;
                                         SendMessageEnquued_EXPERIMENTAL(new HeartbeatPayload { timeSent = new DateTimeOffset(LastMessageReceived).ToUnixTimeMilliseconds() });
                                     }
-                                    else if (MessageReceived != null) await MessageReceived.Invoke(this, receivedMessage);
+                                    else if (MessageReceived != null) await MessageReceived.Invoke(this, receivedMessage).ConfigureAwait(continueOnCapturedContext: false);
                                 }
                             }
 
                             cts = new CancellationTokenSource(WS_TIMEOUT_MS);
-                            receiveResult = await ws.ReceiveAsync(new ArraySegment<byte>(messageAccumulatorBuffer, messageAccumulatorPosition, MESSAGE_ACCUMULATOR_BUFFER_SIZE - messageAccumulatorPosition), CancellationToken.None);
+                            receiveResult = await ws.ReceiveAsync(new ArraySegment<byte>(messageAccumulatorBuffer, messageAccumulatorPosition, MESSAGE_ACCUMULATOR_BUFFER_SIZE - messageAccumulatorPosition), CancellationToken.None)
+                                .ConfigureAwait(continueOnCapturedContext: false);
                             cts.Dispose();
                         }
                     }
@@ -256,7 +257,7 @@ namespace Omukade.Cheyenne.Miniserver.Controllers
                     finally
                     {
                         cts?.Dispose();
-                        if (ClientDisconnected != null) await ClientDisconnected(this);
+                        if (ClientDisconnected != null) await ClientDisconnected(this).ConfigureAwait(continueOnCapturedContext: false);
                     }
                 }
             }

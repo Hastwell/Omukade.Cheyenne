@@ -16,11 +16,14 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **************************************************************************/
 
+using Microsoft.AspNetCore.Connections;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Newtonsoft.Json;
 using Omukade.AutoPAR;
 using Omukade.Cheyenne.Encoding;
 using Spectre.Console;
 using System.Diagnostics;
+using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -40,13 +43,28 @@ namespace Omukade.Cheyenne
             Console.WriteLine("(c) 2022 Electrosheep Networks");
 
             InitAutoPar();
+
+            if(args.Contains("--daemon"))
+            {
+                config.RunAsDaemon = true;
+            }
+
             CheckForCardUpdates();
             Init();
 
             app = PrepareWsServer();
             StartWsProcessorThread();
             app.Start();
-            CmdShell();
+
+            if(config.RunAsDaemon)
+            {
+                Console.CancelKeyPress += Console_CancelKeyPress;
+                app.WaitForShutdown();
+            }
+            else
+            {
+                CmdShell();
+            }
         }
 
         private static void SetFirstChanceExceptionHandler()
@@ -56,6 +74,16 @@ namespace Omukade.Cheyenne
 
         private static void OnFirstChanceException(object? sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
         {
+            // Don't report certain types of non-server exceptions (eg, SocketExceptions or BadHttpRequestExceptions caused by people probing the server)
+            Type exceptionType = e.Exception.GetType();
+            Exception eError = e.Exception;
+#pragma warning disable CS0618 // Type or member is obsolete
+            if (eError is Microsoft.AspNetCore.Server.Kestrel.Core.BadHttpRequestException || eError is SocketException || eError is ConnectionResetException)
+            {
+                return;
+            }
+#pragma warning restore CS0618 // Type or member is obsolete
+
             StackTrace st = new StackTrace(e.Exception);
             StackFrame[] frames = st.GetFrames();
 
@@ -89,7 +117,7 @@ namespace Omukade.Cheyenne
             {
                 ProcessStartInfo psi = new ProcessStartInfo();
                 psi.FileName = config.CardDefinitionFetcherPath;
-                psi.Arguments = "--fetch-carddefinitions --fetch-rules --no-update-check --quiet";
+                psi.Arguments = "--fetch-carddefinitions --fetch-rules --fetch-featureflags --no-update-check --quiet";
                 psi.WorkingDirectory = Path.GetDirectoryName(config.CardDefinitionFetcherPath);
 
                 Process cardFetcherProcess = Process.Start(psi)!;
