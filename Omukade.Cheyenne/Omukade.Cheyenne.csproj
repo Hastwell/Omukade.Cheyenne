@@ -61,23 +61,23 @@
 
   <ItemGroup>
     <Reference Include="FlatBuffers.Core">
-      <HintPath>..\..\Rainier-Assemblies\1.9.2.247540.20231114_2058_PAR\FlatBuffers.Core.dll</HintPath>
+      <HintPath>..\..\Rainier-Assemblies\1.10.0.257251.20231212_2002_PAR\FlatBuffers.Core.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="MatchLogic">
-      <HintPath>..\..\Rainier-Assemblies\1.9.2.247540.20231114_2058_PAR\MatchLogic.dll</HintPath>
+      <HintPath>..\..\Rainier-Assemblies\1.10.0.257251.20231212_2002_PAR\MatchLogic.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Platform.Sdk">
-      <HintPath>..\..\Rainier-Assemblies\1.9.2.247540.20231114_2058_PAR\Platform.Sdk.dll</HintPath>
+      <HintPath>..\..\Rainier-Assemblies\1.10.0.257251.20231212_2002_PAR\Platform.Sdk.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="RainierClientSDK">
-      <HintPath>..\..\Rainier-Assemblies\1.9.2.247540.20231114_2058_PAR\RainierClientSDK.dll</HintPath>
+      <HintPath>..\..\Rainier-Assemblies\1.10.0.257251.20231212_2002_PAR\RainierClientSDK.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="SharedLogicUtils">
-      <HintPath>..\..\Rainier-Assemblies\1.9.2.247540.20231114_2058_PAR\SharedLogicUtils.dll</HintPath>
+      <HintPath>..\..\Rainier-Assemblies\1.10.0.257251.20231212_2002_PAR\SharedLogicUtils.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
