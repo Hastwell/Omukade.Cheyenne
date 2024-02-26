@@ -29,6 +29,7 @@ using RainierClientSDK;
 using RainierClientSDK.source.Player;
 using SharedLogicUtils.DataTypes;
 using SharedLogicUtils.source.Services.Query.Contexts;
+using SharedLogicUtils.source.Services.Query.Responses;
 using SharedSDKUtils;
 
 namespace Omukade.Cheyenne
@@ -151,7 +152,7 @@ namespace Omukade.Cheyenne
         {
             if (client == null)
             {
-                Console.Error.WriteLine("Can't send message to client - client is null (probably already closed)");
+                Program.ReportError(new InvalidOperationException("Can't send message to client - client is null (probably already closed)"));
                 return;
             }
 
@@ -333,11 +334,28 @@ namespace Omukade.Cheyenne
             }
             else if (message is ProposeDirectMatch pdm)
             {
+                if(pdm.targetAccountId?.accountId == null)
+                {
+                    throw new ArgumentException("Received " + nameof(ProposeDirectMatch) + " with null accountId");
+                }
+
                 EnsurePlayerDataForMatch(player);
 
                 if (!UserMetadata.TryGetValue(pdm.targetAccountId.accountId, out PlayerMetadata targetPlayerData))
                 {
-                    throw new ArgumentException("Sending a match request to an offline/non-existent player.");
+                    Program.ReportUserError($"Cannot battle with offline player - {player.PlayerDisplayName} vs {pdm.targetAccountId.accountId}", null);
+
+                    RemovePlayerFromAllMatchmaking(player);
+
+                    RainierResponse errorResponse = new RainierResponse()
+                    {
+                        error = 42055,
+                        message = "Cannot battle with offline player."
+                    };
+                    MatchmakingDenied denied = new MatchmakingDenied(pdm.txid, JsonConvert.SerializeObject(errorResponse), 16100);
+                    SendPacketToClient(player, denied);
+                    return;
+                    // throw new ArgumentException("Sending a match request to an offline/non-existent player.");
                 }
 
                 player.DirectMatchCurrentlySendingTo = pdm.targetAccountId.accountId;
@@ -362,6 +380,11 @@ namespace Omukade.Cheyenne
             }
             else if (message is AcceptDirectMatch adm)
             {
+                if (adm.invitation?.sourceAccountId == null)
+                {
+                    throw new ArgumentException("Received " + nameof(AcceptDirectMatch) + " with null accountId");
+                }
+
                 EnsurePlayerDataForMatch(player);
 
                 if (!UserMetadata.TryGetValue(adm.invitation.sourceAccountId, out PlayerMetadata initiatingPlayerMetadata))

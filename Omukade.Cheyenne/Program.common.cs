@@ -21,9 +21,11 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Newtonsoft.Json;
 using Omukade.AutoPAR;
 using Omukade.Cheyenne.Encoding;
+using Omukade.Cheyenne.Miniserver.Controllers;
 using Spectre.Console;
 using System.Diagnostics;
 using System.Net.Sockets;
+using System.Net.WebSockets;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -78,7 +80,7 @@ namespace Omukade.Cheyenne
             Type exceptionType = e.Exception.GetType();
             Exception eError = e.Exception;
 #pragma warning disable CS0618 // Type or member is obsolete
-            if (eError is Microsoft.AspNetCore.Server.Kestrel.Core.BadHttpRequestException || eError is SocketException || eError is ConnectionResetException)
+            if (eError is Microsoft.AspNetCore.Server.Kestrel.Core.BadHttpRequestException || eError is SocketException || eError is ConnectionResetException || (eError is WebSocketException wse && wse.WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely) )
             {
                 return;
             }
@@ -217,6 +219,49 @@ namespace Omukade.Cheyenne
 
             Console.WriteLine("Preloading/Precompressing Heavy Data...");
             GameServerCore.RefreshSharedGameRules(config);
+
+            serverCore.ErrorHandler += ReportUserError;
+        }
+
+        internal static void ReportUserError(string? userMessage, Exception? ex)
+        {
+            if(userMessage != null)
+            {
+                Logging.WriteError(userMessage);
+            }
+            if(ex != null)
+            {
+                AnsiConsole.WriteException(ex);
+            }
+
+            if (config.EnableDiscordErrorWebhook && config.DiscordErrorWebhookUrl != null)
+            {
+                StringBuilder messageToSend = new StringBuilder();
+
+                messageToSend.Append("Error on ");
+                messageToSend.Append(System.Net.Dns.GetHostName());
+
+                if(userMessage != null)
+                {
+                    messageToSend.Append(" : ");
+                    messageToSend.Append(userMessage);
+                }
+                if (ex != null)
+                {
+                    messageToSend.AppendLine(" : " + ex.GetType().Name);
+                    if (ex.Message != null) messageToSend.AppendLine(ex.Message);
+                    WriteInnerExceptionToStringbuider(ex, messageToSend);
+                    if (ex.StackTrace != null)
+                    {
+                        messageToSend.Append("```");
+                        messageToSend.Append(ex.StackTrace);
+                        messageToSend.Append("```");
+                    }
+                }
+
+
+                SendDiscordAlert(messageToSend.ToString(), config.DiscordErrorWebhookUrl);
+            }
         }
 
         /// <summary>
@@ -239,29 +284,7 @@ namespace Omukade.Cheyenne
             return rtrn;
         }
 
-        internal static void ReportError(Exception ex)
-        {
-            AnsiConsole.WriteException(ex);
-
-            if (config.EnableDiscordErrorWebhook && config.DiscordErrorWebhookUrl != null)
-            {
-                StringBuilder messageToSend = new StringBuilder();
-                messageToSend.Append("Exception on ");
-                messageToSend.Append(System.Net.Dns.GetHostName());
-                messageToSend.AppendLine(" : " + ex.GetType().Name);
-                if (ex.Message != null) messageToSend.AppendLine(ex.Message);
-                WriteInnerExceptionToStringbuider(ex, messageToSend);
-                if (ex.StackTrace != null)
-                {
-                    messageToSend.Append("```");
-                    messageToSend.Append(ex.StackTrace);
-                    messageToSend.Append("```");
-                }
-
-
-                SendDiscordAlert(messageToSend.ToString(), config.DiscordErrorWebhookUrl);
-            }
-        }
+        internal static void ReportError(Exception ex) => ReportUserError(null, ex);
 
         static void WriteInnerExceptionToStringbuider(Exception ex, StringBuilder sb)
         {
