@@ -48,7 +48,7 @@ namespace Omukade.Cheyenne.Tests
             },
             name = "LOCAL",
             SupportsRouting = false
-        });
+        }, new NopClientLogger());
 
         static WebSocketSettings wsSettings = new WebSocketSettings
         {
@@ -130,7 +130,7 @@ namespace Omukade.Cheyenne.Tests
             WebsocketPersistent wsp = new WebsocketPersistent(enableHeartbeats: false, enableMessageReceipts: false, enableMessageLogging: false);
 
             WebsocketWrapper wsw = new WebsocketWrapper(logger: new NopClientLogger(), router, token: fakeTokenHolder, dispatcher: md, CODEC_TO_USE, settings: wsSettings, persistent: wsp,
-                onNetworkStatusChange: null, onServerTimeAvailable: null);
+                onNetworkStatusChange: null, onDisconnect: null, onServerTimeAvailable: null);
 
             try
             {
@@ -203,7 +203,7 @@ namespace Omukade.Cheyenne.Tests
             WebsocketPersistent wsp = new WebsocketPersistent(enableHeartbeats: false, enableMessageReceipts: false, enableMessageLogging: false);
 
             WebsocketWrapper wsw = new WebsocketWrapper(logger: new NopClientLogger(), router, token: fakeTokenHolder, dispatcher: md, CODEC_TO_USE, settings: wsSettings, persistent: wsp,
-                onNetworkStatusChange: null, onServerTimeAvailable: null);
+                onNetworkStatusChange: null, onDisconnect: null, onServerTimeAvailable: null);
 
             bool receivedSignal = false;
             try
