@@ -24,9 +24,9 @@ using Omukade.Cheyenne.Miniserver.Controllers;
 using Omukade.Cheyenne.Miniserver.ControlMessages;
 using Omukade.Cheyenne.Miniserver.Model;
 using Omukade.Cheyenne.Shell.Model;
-using Platform.Sdk.Models.GameServer;
-using Platform.Sdk.Models.Matchmaking;
-using Platform.Sdk.Models.Query;
+using ClientNetworking.Models.GameServer;
+using ClientNetworking.Models.Matchmaking;
+using ClientNetworking.Models.Query;
 using Spectre.Console;
 using System.Collections.Concurrent;
 using System.Reflection;
@@ -302,9 +302,9 @@ namespace Omukade.Cheyenne
         static void ProcessQueryMessageForEcho(IClientConnection controller, QueryMessage queryMsg)
         {
             if(queryMsg.queryId == REFLECT_MESSAGE_MAGIC && queryMsg.message?.Length <= 2 && 
-               queryMsg.message[0] is (byte) Platform.Sdk.SerializationFormat.FlatBuffers or (byte)Platform.Sdk.SerializationFormat.JSON)
+               queryMsg.message[0] is (byte) ClientNetworking.SerializationFormat.FlatBuffers or (byte)ClientNetworking.SerializationFormat.JSON)
             {
-                controller.SendMessageEnquued_EXPERIMENTAL(new QueryMessage { queryId = queryMsg.queryId, message = queryMsg.message }, (Platform.Sdk.SerializationFormat)queryMsg.message[0]);
+                controller.SendMessageEnquued_EXPERIMENTAL(new QueryMessage { queryId = queryMsg.queryId, message = queryMsg.message }, (ClientNetworking.SerializationFormat)queryMsg.message[0]);
             }
         }
     }

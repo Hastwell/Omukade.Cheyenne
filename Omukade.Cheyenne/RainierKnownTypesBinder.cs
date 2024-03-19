@@ -32,7 +32,7 @@ namespace Omukade.Cheyenne
         static Dictionary<string, Type> RECOGNIZED_TYPES;
         static RainierKnownTypesBinder()
         {
-            Type[] TYPES_FROM_TARGETED_ASSEMBLIES = new Type[] { typeof(MatchLogic.PlayerSelectionInfo), typeof(Platform.Sdk.Models.Matchmaking.BeginMatchmaking) };
+            Type[] TYPES_FROM_TARGETED_ASSEMBLIES = new Type[] { typeof(MatchLogic.PlayerSelectionInfo), typeof(ClientNetworking.Models.Matchmaking.BeginMatchmaking) };
             RECOGNIZED_TYPES = TYPES_FROM_TARGETED_ASSEMBLIES.Select(t => t.Assembly)
                 .SelectMany(t => t.GetTypes())
                 .Where(t => t.FullName != "MatchLogic.AbstractBlob") // Prevent gadget attacks

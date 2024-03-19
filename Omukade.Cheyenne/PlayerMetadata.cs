@@ -18,7 +18,7 @@
 
 using Omukade.Cheyenne.ClientConnections;
 using Omukade.Cheyenne.Miniserver.Controllers;
-using Platform.Sdk.Models.Inventory;
+using ClientNetworking.Models.Inventory;
 using SharedLogicUtils.DataTypes;
 using SharedSDKUtils;
 using System;

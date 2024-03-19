@@ -21,10 +21,10 @@ using Newtonsoft.Json;
 using Omukade.Cheyenne.CustomMessages;
 using Omukade.Cheyenne.Model;
 using Omukade.Cheyenne.Patching;
-using Platform.Sdk.Models;
-using Platform.Sdk.Models.GameServer;
-using Platform.Sdk.Models.Matchmaking;
-using Platform.Sdk.Models.Query;
+using ClientNetworking.Models;
+using ClientNetworking.Models.GameServer;
+using ClientNetworking.Models.Matchmaking;
+using ClientNetworking.Models.Query;
 using RainierClientSDK;
 using RainierClientSDK.source.Player;
 using SharedLogicUtils.DataTypes;
@@ -158,15 +158,15 @@ namespace Omukade.Cheyenne
 
             if (client.PlayerConnectionHelens != null)
             {
-                Platform.Sdk.SerializationFormat formatToUse;
+                ClientNetworking.SerializationFormat formatToUse;
                 if (ForceJsonForAllSentMessages)
                 {
-                    formatToUse = Platform.Sdk.SerializationFormat.JSON;
+                    formatToUse = ClientNetworking.SerializationFormat.JSON;
                 }
                 else
                 {
-                    bool isSupportedByFlatbufferEncoder = Platform.Sdk.Flatbuffers.Encoders.Map.ContainsKey(payload.GetType());
-                    formatToUse = isSupportedByFlatbufferEncoder ? Platform.Sdk.SerializationFormat.FlatBuffers : Platform.Sdk.SerializationFormat.JSON;
+                    bool isSupportedByFlatbufferEncoder = ClientNetworking.Flatbuffers.Encoders.Map.ContainsKey(payload.GetType());
+                    formatToUse = isSupportedByFlatbufferEncoder ? ClientNetworking.SerializationFormat.FlatBuffers : ClientNetworking.SerializationFormat.JSON;
                 }
 
                 client.PlayerConnectionHelens.SendMessageEnquued_EXPERIMENTAL(payload, formatToUse);
@@ -368,9 +368,9 @@ namespace Omukade.Cheyenne
                 SignedMatchContext smcForSender = new SignedMatchContext(player.DirectMatchMakingToken, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), matchContext: null, signature: DUMMY_EMPTY_SIGNATURE);
                 SendPacketToClient(player, smcForSender);
 
-                FriendDirectMatchContext fdmc = Platform.Sdk.Util.Utils.FromJsonBytes<FriendDirectMatchContext>(pdm.context);
+                FriendDirectMatchContext fdmc = ClientNetworking.Util.Utils.FromJsonBytes<FriendDirectMatchContext>(pdm.context);
                 MatchSharedContext msc = new MatchSharedContext { gameMode = fdmc.gameMode, matchTime = fdmc.matchTime, useAutoSelect = fdmc.useAutoSelect, useMatchTimer = fdmc.useMatchTimer, useOperationTimer = fdmc.useOperationTimer };
-                byte[] mscBytes = Platform.Sdk.Util.Utils.ToJsonBytes(msc);
+                byte[] mscBytes = ClientNetworking.Util.Utils.ToJsonBytes(msc);
                 SendPacketToClient(targetPlayerData, new DirectMatchInvitation(sourceAccountId: player.PlayerId, mmToken: player.DirectMatchMakingToken, issuedAt: DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), sharedContext: mscBytes, signature: DUMMY_EMPTY_SIGNATURE, clientVersion: string.Empty, timeOffsetSeconds: 0L));
             }
             else if (message is CancelDirectMatch cdm)
@@ -460,7 +460,7 @@ namespace Omukade.Cheyenne
             {
                 if (pmd.DirectMatchCurrentlyReceivingFrom != null && pmd.DirectMatchCurrentlyReceivingFrom.Contains(initiatingPlayer.PlayerId!))
                 {
-                    SendPacketToClient(pmd, new Platform.Sdk.Models.Matchmaking.CancellationToken(initiatingPlayer.DirectMatchMakingToken, issuedAt: default, signature: DUMMY_EMPTY_SIGNATURE));
+                    SendPacketToClient(pmd, new ClientNetworking.Models.Matchmaking.CancellationToken(initiatingPlayer.DirectMatchMakingToken, issuedAt: default, signature: DUMMY_EMPTY_SIGNATURE));
                     pmd.RemovePlayerFromDirectMatchReceivingFrom(initiatingPlayer.PlayerId!);
                 }
             }

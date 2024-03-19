@@ -20,57 +20,57 @@ using com.pokemon.studio.contracts.client_gameserver;
 using com.pokemon.studio.contracts.client_user;
 using com.pokemon.studio.contracts.client_websocket;
 using FlatBuffers;
-using Platform.Sdk.Models;
-using Platform.Sdk.Models.GameServer;
-using Platform.Sdk.Models.Matchmaking;
-using Platform.Sdk.Models.Query;
-using Platform.Sdk.Models.User;
-using Platform.Sdk.Models.WebSocket;
+using ClientNetworking.Models;
+using ClientNetworking.Models.GameServer;
+using ClientNetworking.Models.Matchmaking;
+using ClientNetworking.Models.Query;
+using ClientNetworking.Models.User;
+using ClientNetworking.Models.WebSocket;
 
 namespace Omukade.Cheyenne.Encoding
 {
     public class ServersideFlatbufferEncoders
     {
-        public static Platform.Sdk.Models.Matchmaking.BeginMatchmaking DecodeBeginMatchmaking(ByteBuffer bb)
+        public static ClientNetworking.Models.Matchmaking.BeginMatchmaking DecodeBeginMatchmaking(ByteBuffer bb)
         {
             com.pokemon.studio.contracts.client_matchmaker.BeginMatchmaking modelMessage = DecodeCommon<com.pokemon.studio.contracts.client_matchmaker.BeginMatchmaking>(bb);
             return new(modelMessage.Txid, modelMessage.GetContextBytes()?.ToArray());
         }
 
-        public static Platform.Sdk.Models.Matchmaking.CancelMatchmaking DecodeCancelMatchmaking(ByteBuffer bb)
+        public static ClientNetworking.Models.Matchmaking.CancelMatchmaking DecodeCancelMatchmaking(ByteBuffer bb)
         {
             com.pokemon.studio.contracts.client_matchmaker.CancelMatchmaking modelMessage = DecodeCommon<com.pokemon.studio.contracts.client_matchmaker.CancelMatchmaking>(bb);
             return new(modelMessage.Txid);
         }
 
-        public static Platform.Sdk.Models.GameServer.GameMessage DecodeGameMessage(ByteBuffer bb)
+        public static ClientNetworking.Models.GameServer.GameMessage DecodeGameMessage(ByteBuffer bb)
         {
             com.pokemon.studio.contracts.client_gameserver.GameMessage modelMessage = DecodeCommon<com.pokemon.studio.contracts.client_gameserver.GameMessage>(bb);
-            return new Platform.Sdk.Models.GameServer.GameMessage { gameId = modelMessage.GameId, message = modelMessage.GetMessageBytes()?.ToArray() };
+            return new ClientNetworking.Models.GameServer.GameMessage { gameId = modelMessage.GameId, message = modelMessage.GetMessageBytes()?.ToArray() };
         }
-        public static Platform.Sdk.Models.Matchmaking.ProposeDirectMatch DecodeProposeDirectMatch(ByteBuffer bb)
+        public static ClientNetworking.Models.Matchmaking.ProposeDirectMatch DecodeProposeDirectMatch(ByteBuffer bb)
         {
             com.pokemon.studio.contracts.client_matchmaker.ProposeDirectMatch modelMessage = DecodeCommon<com.pokemon.studio.contracts.client_matchmaker.ProposeDirectMatch>(bb);
             SignedAccountId? sai = DecodeSignedAccountIdModel(modelMessage.TargetAccountId);
             return new(modelMessage.Txid, sai, modelMessage.GetContextBytes()?.ToArray());
         }
 
-        public static Platform.Sdk.Models.Matchmaking.CancelDirectMatch DecodeCancelDirectMatch(ByteBuffer bb)
+        public static ClientNetworking.Models.Matchmaking.CancelDirectMatch DecodeCancelDirectMatch(ByteBuffer bb)
         {
             com.pokemon.studio.contracts.client_matchmaker.CancelDirectMatch modelMessage = DecodeCommon<com.pokemon.studio.contracts.client_matchmaker.CancelDirectMatch>(bb);
-            return new Platform.Sdk.Models.Matchmaking.CancelDirectMatch(DecodeSignedAccountIdModel(modelMessage.TargetAccountId), DecodeSignedMatchContextModel(modelMessage.SignedMatchContext));
+            return new ClientNetworking.Models.Matchmaking.CancelDirectMatch(DecodeSignedAccountIdModel(modelMessage.TargetAccountId), DecodeSignedMatchContextModel(modelMessage.SignedMatchContext));
         }
 
-        public static Platform.Sdk.Models.Matchmaking.AcceptDirectMatch DecodeAcceptDirectMatch(ByteBuffer bb)
+        public static ClientNetworking.Models.Matchmaking.AcceptDirectMatch DecodeAcceptDirectMatch(ByteBuffer bb)
         {
             com.pokemon.studio.contracts.client_matchmaker.AcceptDirectMatch modelMessage = DecodeCommon<com.pokemon.studio.contracts.client_matchmaker.AcceptDirectMatch>(bb);
-            return new Platform.Sdk.Models.Matchmaking.AcceptDirectMatch(modelMessage.Txid, DecodeDirectMatchInvitationModel(modelMessage.Invitation), modelMessage.GetContextBytes()?.ToArray());
+            return new ClientNetworking.Models.Matchmaking.AcceptDirectMatch(modelMessage.Txid, DecodeDirectMatchInvitationModel(modelMessage.Invitation), modelMessage.GetContextBytes()?.ToArray());
         }
 
-        internal static Platform.Sdk.Models.Query.QueryMessage DecodeQueryMessage(ByteBuffer bb)
+        internal static ClientNetworking.Models.Query.QueryMessage DecodeQueryMessage(ByteBuffer bb)
         {
             com.pokemon.studio.contracts.client_gameserver.QueryMessage modelMessage = DecodeCommon<com.pokemon.studio.contracts.client_gameserver.QueryMessage>(bb);
-            return new Platform.Sdk.Models.Query.QueryMessage { queryId = modelMessage.QueryId, message = modelMessage.GetMessageBytes()?.ToArray() };
+            return new ClientNetworking.Models.Query.QueryMessage { queryId = modelMessage.QueryId, message = modelMessage.GetMessageBytes()?.ToArray() };
         }
 
         public static DataStoreSaveRequest DecodeDataStoreSaveRequest(ByteBuffer bb)
@@ -80,10 +80,10 @@ namespace Omukade.Cheyenne.Encoding
             return dssr;
         }
 
-        internal static Platform.Sdk.Models.WebSocket.HeartbeatPayload DecodeHeartbeatPayload(ByteBuffer bb)
+        internal static ClientNetworking.Models.WebSocket.HeartbeatPayload DecodeHeartbeatPayload(ByteBuffer bb)
         {
             com.pokemon.studio.contracts.client_websocket.HeartbeatPayload heartbeatPayload = DecodeCommon<com.pokemon.studio.contracts.client_websocket.HeartbeatPayload>(bb);
-            return new Platform.Sdk.Models.WebSocket.HeartbeatPayload() { timeSent = heartbeatPayload.TimeSent };
+            return new ClientNetworking.Models.WebSocket.HeartbeatPayload() { timeSent = heartbeatPayload.TimeSent };
         }
 
         static TModel DecodeCommon<TModel>(ByteBuffer bb) where TModel : struct, IFlatbufferObject

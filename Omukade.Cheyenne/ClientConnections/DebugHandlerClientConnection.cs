@@ -1,4 +1,4 @@
-﻿using Platform.Sdk;
+﻿using ClientNetworking;
 
 namespace Omukade.Cheyenne.ClientConnections
 {

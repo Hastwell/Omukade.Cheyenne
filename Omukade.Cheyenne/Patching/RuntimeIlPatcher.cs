@@ -26,7 +26,7 @@ using MatchLogic.Utils;
 using Newtonsoft.Json;
 using Omukade.Cheyenne.Encoding;
 using Omukade.Cheyenne.Model;
-using Platform.Sdk.Models;
+using ClientNetworking.Models;
 using RainierClientSDK;
 using RainierClientSDK.source.OfflineMatch;
 using SharedLogicUtils.source.Services.Query.Responses;

@@ -1,4 +1,4 @@
-﻿using Platform.Sdk.Models.GameServer;
+﻿using ClientNetworking.Models.GameServer;
 using RainierClientSDK;
 
 namespace Omukade.Cheyenne.Tests.MultiInstanceStatic

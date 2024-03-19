@@ -16,13 +16,13 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **************************************************************************/
 
-using Platform.Sdk;
+using ClientNetworking;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Route = Platform.Sdk.Route;
+using Route = ClientNetworking.Route;
 
 namespace Omukade.Cheyenne.Tests.BakedData
 {

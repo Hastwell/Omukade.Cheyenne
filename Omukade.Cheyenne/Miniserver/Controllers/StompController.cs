@@ -25,11 +25,11 @@ using Omukade.Cheyenne.CustomMessages;
 using Omukade.Cheyenne.Encoding;
 using Omukade.Cheyenne.Extensions;
 using Omukade.Cheyenne.Miniserver.Model;
-using Platform.Sdk;
-using Platform.Sdk.Codecs;
-using Platform.Sdk.Models.WebSocket;
-using Platform.Sdk.Stomp;
-using Platform.Sdk.Util;
+using ClientNetworking;
+using ClientNetworking.Codecs;
+using ClientNetworking.Models.WebSocket;
+using ClientNetworking.Stomp;
+using ClientNetworking.Util;
 using Spectre.Console;
 using System.Net.WebSockets;
 
@@ -96,7 +96,7 @@ namespace Omukade.Cheyenne.Miniserver.Controllers
 
         private static readonly Func<object, ReusableBuffer> encodeFlatbuffer =
             (Func<object, ReusableBuffer>) Delegate.CreateDelegate(typeof(Func<object, ReusableBuffer>),
-                typeof(ICodec).Assembly.GetType("Platform.Sdk.Flatbuffers.Encoders")!.GetMethod("Encode", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic, new Type[] { typeof(object) })!);
+                typeof(ICodec).Assembly.GetType("ClientNetworking.Flatbuffers.Encoders")!.GetMethod("Encode", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic, new Type[] { typeof(object) })!);
 
         private WebSocket ws;
         public PlayerMetadata? Tag { get; set; }
@@ -495,16 +495,16 @@ namespace Omukade.Cheyenne.Miniserver.Controllers
 
                 return header.Payload switch
                 {
-                    nameof(Platform.Sdk.Models.GameServer.GameMessage) => ServersideFlatbufferEncoders.DecodeGameMessage(bb),
-                    nameof(Platform.Sdk.Models.Matchmaking.AcceptDirectMatch) => ServersideFlatbufferEncoders.DecodeAcceptDirectMatch(bb),
-                    nameof(Platform.Sdk.Models.Matchmaking.CancelDirectMatch) => ServersideFlatbufferEncoders.DecodeCancelDirectMatch(bb),
-                    nameof(Platform.Sdk.Models.Matchmaking.ProposeDirectMatch) => ServersideFlatbufferEncoders.DecodeProposeDirectMatch(bb),
-                    nameof(Platform.Sdk.Models.Matchmaking.BeginMatchmaking) => ServersideFlatbufferEncoders.DecodeBeginMatchmaking(bb),
-                    nameof(Platform.Sdk.Models.Matchmaking.CancelMatchmaking) => ServersideFlatbufferEncoders.DecodeCancelMatchmaking(bb),
-                    nameof(Platform.Sdk.Models.Query.QueryMessage) => ServersideFlatbufferEncoders.DecodeQueryMessage(bb),
-                    nameof(Platform.Sdk.Models.User.DataStoreSaveRequest) => ServersideFlatbufferEncoders.DecodeDataStoreSaveRequest(bb),
+                    nameof(ClientNetworking.Models.GameServer.GameMessage) => ServersideFlatbufferEncoders.DecodeGameMessage(bb),
+                    nameof(ClientNetworking.Models.Matchmaking.AcceptDirectMatch) => ServersideFlatbufferEncoders.DecodeAcceptDirectMatch(bb),
+                    nameof(ClientNetworking.Models.Matchmaking.CancelDirectMatch) => ServersideFlatbufferEncoders.DecodeCancelDirectMatch(bb),
+                    nameof(ClientNetworking.Models.Matchmaking.ProposeDirectMatch) => ServersideFlatbufferEncoders.DecodeProposeDirectMatch(bb),
+                    nameof(ClientNetworking.Models.Matchmaking.BeginMatchmaking) => ServersideFlatbufferEncoders.DecodeBeginMatchmaking(bb),
+                    nameof(ClientNetworking.Models.Matchmaking.CancelMatchmaking) => ServersideFlatbufferEncoders.DecodeCancelMatchmaking(bb),
+                    nameof(ClientNetworking.Models.Query.QueryMessage) => ServersideFlatbufferEncoders.DecodeQueryMessage(bb),
+                    nameof(ClientNetworking.Models.User.DataStoreSaveRequest) => ServersideFlatbufferEncoders.DecodeDataStoreSaveRequest(bb),
                     nameof(HeartbeatPayload) => ServersideFlatbufferEncoders.DecodeHeartbeatPayload(bb),
-                    nameof(PingPayload) => Platform.Sdk.Flatbuffers.Decoders.DecodePingPayload(bb),
+                    nameof(PingPayload) => ClientNetworking.Flatbuffers.Decoders.DecodePingPayload(bb),
                     _ => throw new IllegalPacketReceivedException($"Unknown Flatbuffer message type {header.Payload}")
                 };
             }
@@ -514,14 +514,14 @@ namespace Omukade.Cheyenne.Miniserver.Controllers
 
                 return header.Payload switch
                 {
-                    nameof(Platform.Sdk.Models.GameServer.GameMessage) => JsonConvert.DeserializeObject<Platform.Sdk.Models.GameServer.GameMessage>(jsonPayload),
-                    nameof(Platform.Sdk.Models.Matchmaking.AcceptDirectMatch) => JsonConvert.DeserializeObject<Platform.Sdk.Models.Matchmaking.AcceptDirectMatch>(jsonPayload),
-                    nameof(Platform.Sdk.Models.Matchmaking.CancelDirectMatch) => JsonConvert.DeserializeObject<Platform.Sdk.Models.Matchmaking.CancelDirectMatch>(jsonPayload),
-                    nameof(Platform.Sdk.Models.Matchmaking.ProposeDirectMatch) => JsonConvert.DeserializeObject<Platform.Sdk.Models.Matchmaking.ProposeDirectMatch>(jsonPayload),
-                    nameof(Platform.Sdk.Models.Matchmaking.BeginMatchmaking) => JsonConvert.DeserializeObject<Platform.Sdk.Models.Matchmaking.BeginMatchmaking>(jsonPayload),
-                    nameof(Platform.Sdk.Models.Matchmaking.CancelMatchmaking) => JsonConvert.DeserializeObject<Platform.Sdk.Models.Matchmaking.CancelMatchmaking>(jsonPayload),
-                    nameof(Platform.Sdk.Models.Query.QueryMessage) => JsonConvert.DeserializeObject<Platform.Sdk.Models.Query.QueryMessage>(jsonPayload),
-                    nameof(Platform.Sdk.Models.User.DataStoreSaveRequest) => JsonConvert.DeserializeObject<Platform.Sdk.Models.User.DataStoreSaveRequest>(jsonPayload),
+                    nameof(ClientNetworking.Models.GameServer.GameMessage) => JsonConvert.DeserializeObject<ClientNetworking.Models.GameServer.GameMessage>(jsonPayload),
+                    nameof(ClientNetworking.Models.Matchmaking.AcceptDirectMatch) => JsonConvert.DeserializeObject<ClientNetworking.Models.Matchmaking.AcceptDirectMatch>(jsonPayload),
+                    nameof(ClientNetworking.Models.Matchmaking.CancelDirectMatch) => JsonConvert.DeserializeObject<ClientNetworking.Models.Matchmaking.CancelDirectMatch>(jsonPayload),
+                    nameof(ClientNetworking.Models.Matchmaking.ProposeDirectMatch) => JsonConvert.DeserializeObject<ClientNetworking.Models.Matchmaking.ProposeDirectMatch>(jsonPayload),
+                    nameof(ClientNetworking.Models.Matchmaking.BeginMatchmaking) => JsonConvert.DeserializeObject<ClientNetworking.Models.Matchmaking.BeginMatchmaking>(jsonPayload),
+                    nameof(ClientNetworking.Models.Matchmaking.CancelMatchmaking) => JsonConvert.DeserializeObject<ClientNetworking.Models.Matchmaking.CancelMatchmaking>(jsonPayload),
+                    nameof(ClientNetworking.Models.Query.QueryMessage) => JsonConvert.DeserializeObject<ClientNetworking.Models.Query.QueryMessage>(jsonPayload),
+                    nameof(ClientNetworking.Models.User.DataStoreSaveRequest) => JsonConvert.DeserializeObject<ClientNetworking.Models.User.DataStoreSaveRequest>(jsonPayload),
                     nameof(SupplementalDataMessageV2) => JsonConvert.DeserializeObject<SupplementalDataMessageV2>(jsonPayload),
                     nameof(GetOnlineFriends) => JsonConvert.DeserializeObject<GetOnlineFriends>(jsonPayload),
                     nameof(HeartbeatPayload) => JsonConvert.DeserializeObject<HeartbeatPayload>(jsonPayload),

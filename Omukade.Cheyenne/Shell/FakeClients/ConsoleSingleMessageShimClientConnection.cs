@@ -17,7 +17,7 @@
 **************************************************************************/
 
 using Omukade.Cheyenne.ClientConnections;
-using Platform.Sdk;
+using ClientNetworking;
 using System.Collections.Concurrent;
 
 namespace Omukade.Cheyenne.Shell.FakeClients

@@ -21,17 +21,17 @@ using Microsoft.AspNetCore.Builder;
 using MonoMod.Utils;
 using Omukade.Cheyenne.Miniserver.Controllers;
 using Omukade.Cheyenne.Tests.BakedData;
-using Platform.Sdk;
-using Platform.Sdk.Codecs;
-using Platform.Sdk.Flatbuffers;
-using Platform.Sdk.Models.Query;
-using Platform.Sdk.Models.WebSocket;
-using Platform.Sdk.Stomp;
-using Platform.Sdk.Util;
+using ClientNetworking;
+using ClientNetworking.Codecs;
+using ClientNetworking.Flatbuffers;
+using ClientNetworking.Models.Query;
+using ClientNetworking.Models.WebSocket;
+using ClientNetworking.Stomp;
+using ClientNetworking.Util;
 using System.Collections.Concurrent;
 using System.Data;
 using System.Text;
-using SerializationFormat = Platform.Sdk.SerializationFormat;
+using SerializationFormat = ClientNetworking.SerializationFormat;
 
 namespace Omukade.Cheyenne.Tests
 {
@@ -127,7 +127,7 @@ namespace Omukade.Cheyenne.Tests
                 }
             };
 
-            WebsocketPersistent wsp = new WebsocketPersistent(enableHeartbeats: false, enableMessageReceipts: false, enableMessageLogging: false);
+            WebsocketPersistent wsp = new WebsocketPersistent(enableHeartbeats: false, enableMessageReceipts: false, enableVerboseLogging: false);
 
             WebsocketWrapper wsw = new WebsocketWrapper(logger: new NopClientLogger(), router, token: fakeTokenHolder, dispatcher: md, CODEC_TO_USE, settings: wsSettings, persistent: wsp,
                 onNetworkStatusChange: null, onDisconnect: null, onServerTimeAvailable: null);
@@ -200,7 +200,7 @@ namespace Omukade.Cheyenne.Tests
             };
 
 
-            WebsocketPersistent wsp = new WebsocketPersistent(enableHeartbeats: false, enableMessageReceipts: false, enableMessageLogging: false);
+            WebsocketPersistent wsp = new WebsocketPersistent(enableHeartbeats: false, enableMessageReceipts: false, enableVerboseLogging: false);
 
             WebsocketWrapper wsw = new WebsocketWrapper(logger: new NopClientLogger(), router, token: fakeTokenHolder, dispatcher: md, CODEC_TO_USE, settings: wsSettings, persistent: wsp,
                 onNetworkStatusChange: null, onDisconnect: null, onServerTimeAvailable: null);

@@ -17,7 +17,7 @@
 **************************************************************************/
 
 using Newtonsoft.Json;
-using Platform.Sdk;
+using ClientNetworking;
 using SharedLogicUtils.source.Logging;
 using ILogger = SharedLogicUtils.source.Logging.ILogger;
 
