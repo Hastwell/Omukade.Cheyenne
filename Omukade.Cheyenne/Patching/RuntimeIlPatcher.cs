@@ -22,6 +22,7 @@ using FlatBuffers;
 using HarmonyLib;
 using ICSharpCode.SharpZipLib.GZip;
 using MatchLogic;
+using MatchLogic.Utils;
 using Newtonsoft.Json;
 using Omukade.Cheyenne.Encoding;
 using Omukade.Cheyenne.Model;
@@ -44,7 +45,7 @@ using LogLevel = MatchLogic.RainierServiceLogger.LogLevel;
 
 namespace Omukade.Cheyenne.Patching
 {
-    [HarmonyPatch(typeof(MatchOperation), "GetRandomSeed")]
+    [HarmonyPatch(typeof(MatchOperation), nameof(MatchOperation.GetRandomSeed))]
     public static class MatchOperationGetRandomSeedIsDeterministic
     {
         public const int RngSeed = 654654564;
@@ -66,6 +67,7 @@ namespace Omukade.Cheyenne.Patching
 
         static bool Prepare(MethodBase original) => InjectRngPatchAtAll;
 
+        [HarmonyPatch, HarmonyPrefix]
         static bool Prefix(ref int __result)
         {
             if(!UseInjectedRng)
@@ -74,6 +76,44 @@ namespace Omukade.Cheyenne.Patching
             }
 
             __result = Rng.Next();
+            return false;
+        }
+    }
+
+    [HarmonyPatch(typeof(MatchOperationRandomSeedGenerator), nameof(MatchOperationRandomSeedGenerator.GetRandomSeed))]
+    public static class MatchOperationRandomSeedGeneratorIsDeterministic
+    {
+        static bool Prepare(MethodBase original) => MatchOperationGetRandomSeedIsDeterministic.InjectRngPatchAtAll;
+
+        [HarmonyPatch]
+        [HarmonyPrefix]
+        static bool Prefix(ref int __result)
+        {
+            if (!MatchOperationGetRandomSeedIsDeterministic.UseInjectedRng)
+            {
+                return true;
+            }
+
+            __result = MatchOperationGetRandomSeedIsDeterministic.Rng.Next();
+            return false;
+        }
+    }
+
+    [HarmonyPatch(typeof(SystemRandomNumberGenerator))]
+    public static class SystemRandomNumberGeneratorIsDeterministic
+    {
+        static bool Prepare(MethodBase original) => MatchOperationGetRandomSeedIsDeterministic.InjectRngPatchAtAll;
+
+        [HarmonyPatch(MethodType.Constructor, typeof(int))]
+        [HarmonyPrefix]
+        static bool Prefix(ref Random ____random)
+        {
+            if (!MatchOperationGetRandomSeedIsDeterministic.UseInjectedRng)
+            {
+                return true;
+            }
+
+            ____random = MatchOperationGetRandomSeedIsDeterministic.Rng;
             return false;
         }
     }

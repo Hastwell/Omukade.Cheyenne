@@ -469,6 +469,37 @@ namespace Omukade.Cheyenne
             initiatingPlayer.DirectMatchMakingTransactionToken = default;
         }
 
+        /// <summary>
+        /// Converts a player's deckinfo to a decklist suitable for bootstrapping a Rainier game.
+        /// </summary>
+        /// <param name="playerInfo">The player containing deck information to flatten.</param>
+        /// <param name="allCardsThatAppear">A hashset that will be populated with all cards found in the decklist.</param>
+        /// <param name="deterministic">If the decklist should be prepared in a deterministic manner. Minor performance impact; not usually needed except testing where specific deck ordering is required.</param>
+        /// <returns>A flattened list of all cards in the deck.</returns>
+        private static List<string> DeckinfoToDecklist(SharedSDKUtils.PlayerInfo playerInfo, HashSet<string> allCardsThatAppear, bool deterministic)
+        {
+            List<string> deck = new(60);
+
+            IEnumerable<string> deckInfoKeys = playerInfo.settings.deckInfo.cards.Keys;
+
+            if(deterministic)
+            {
+                deckInfoKeys = deckInfoKeys.OrderBy(k => k);
+            }
+
+            foreach (string card in deckInfoKeys)
+            {
+                allCardsThatAppear.Add(card);
+                int cardCount = playerInfo.settings.deckInfo.cards[card];
+                for (int i = 0; i < cardCount; i++)
+                {
+                    deck.Add(card);
+                }
+            }
+
+            return deck;
+        }
+
         internal string StartGameBetweenTwoPlayers(PlayerMetadata playerOneMetadata, PlayerMetadata playerTwoMetadata)
         {
             if(config.DebugFixedRngSeed)
@@ -521,27 +552,9 @@ namespace Omukade.Cheyenne
 
             // OfflineAdapter.CreateGame
             HashSet<string> allCardsThatAppear = new();
-            List<string> deckListP1 = new(60);
-            List<string> deckListP2 = new(60);
-
-            foreach (string card in gameState.playerInfos[PLAYER_ONE].settings.deckInfo.cards.Keys)
-            {
-                allCardsThatAppear.Add(card);
-                int cardCount = gameState.playerInfos[PLAYER_ONE].settings.deckInfo.cards[card];
-                for (int i = 0; i < cardCount; i++)
-                {
-                    deckListP1.Add(card);
-                }
-            }
-            foreach (string card in gameState.playerInfos[PLAYER_TWO].settings.deckInfo.cards.Keys)
-            {
-                allCardsThatAppear.Add(card);
-                int cardCount = gameState.playerInfos[PLAYER_TWO].settings.deckInfo.cards[card];
-                for (int i = 0; i < cardCount; i++)
-                {
-                    deckListP2.Add(card);
-                }
-            }
+            bool deterministicDecklistPrep = config.DebugEnableDeterministicDecklistPreperation;
+            List<string> deckListP1 = DeckinfoToDecklist(gameState.playerInfos[PLAYER_ONE], allCardsThatAppear, deterministicDecklistPrep);
+            List<string> deckListP2 = DeckinfoToDecklist(gameState.playerInfos[PLAYER_TWO], allCardsThatAppear, deterministicDecklistPrep);
 
             // Prepare Caches
             List<CardSource> allCardData = GetCardData(allCardsThatAppear);

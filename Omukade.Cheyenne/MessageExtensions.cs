@@ -19,6 +19,7 @@
 using ICSharpCode.SharpZipLib.GZip;
 using MatchLogic;
 using Newtonsoft.Json;
+using Omukade.Cheyenne.Encoding;
 using Platform.Sdk.Models.GameServer;
 using SharedSDKUtils;
 using System;
@@ -33,7 +34,12 @@ namespace Omukade.Cheyenne
     {
         public static PlayerMessage AsPlayerMessage(this ServerMessage smg)
         {
-            return new PlayerMessage() { gameId = smg.matchID, message = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(smg)) };
+            return new PlayerMessage() { gameId = smg.matchID, message = FasterJson.FastSerializeToBytes(smg) };
+        }
+
+        public static GameMessage AsGameMessage(this ServerMessage smg)
+        {
+            return new GameMessage() { gameId = smg.matchID, message = FasterJson.FastSerializeToBytes(smg) };
         }
 
         public static void SetPrecompressedBody(this ServerMessage smg, byte[] precompressedPayload)
@@ -49,6 +55,22 @@ namespace Omukade.Cheyenne
 
             GZip.Compress(cachedDataBytes, outputData, true, bufferSize: 4096, level: compressionLevel);
             return outputData.ToArray();
+        }
+
+        public static T GetValueEfficently<T>(this ServerMessage smg)
+        {
+            if(smg.compressedValue == null)
+            {
+                return default;
+            }
+
+            using MemoryStream ms = new MemoryStream(smg.compressedValue);
+            using GZipInputStream decompressedStream = new GZipInputStream(ms);
+            using StreamReader textReader = new StreamReader(decompressedStream);
+            using JsonTextReader jsonReader = new JsonTextReader(textReader);
+
+            JsonSerializer serializer = JsonSerializer.Create(DeserializeResolver.settings);
+            return serializer.Deserialize<T>(jsonReader);
         }
     }
 }

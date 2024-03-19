@@ -52,6 +52,10 @@
 			<HintPath>..\..\Rainier-Assemblies\1.11.0.282837.20240210_0232_PAR\SharedLogicUtils.dll</HintPath>
 			<Private>True</Private>
 		</Reference>
+		<Reference Include="RainierClientSDK">
+			<HintPath>..\..\Rainier-Assemblies\1.11.0.282837.20240210_0232_PAR\MockPlatformSDK.dll</HintPath>
+			<Private>True</Private>
+		</Reference>
 	</ItemGroup>
 
   <ItemGroup>

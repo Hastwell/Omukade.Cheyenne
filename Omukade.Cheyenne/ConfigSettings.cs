@@ -69,5 +69,8 @@ namespace Omukade.Cheyenne
 
         [JsonProperty(PropertyName = "run-as-daemon")]
         public bool RunAsDaemon = false;
+
+        [JsonProperty(PropertyName = "debug-enable-deterministic-decklist-preperation")]
+        public bool DebugEnableDeterministicDecklistPreperation = false;
     }
 }

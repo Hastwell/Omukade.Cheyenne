@@ -14,6 +14,9 @@ namespace Omukade.Cheyenne.Encoding
             SerializeResolver.instance = new WhitelistedSerializeContractResolver();
             SerializeResolver.settings.ContractResolver = SerializeResolver.instance;
             SerializeResolver.replayAuto.ContractResolver = SerializeResolver.instance;
+
+            SerializeResolver.basic.ContractResolver = new WhitelistedContractResolver();
+
         }
 
         protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
