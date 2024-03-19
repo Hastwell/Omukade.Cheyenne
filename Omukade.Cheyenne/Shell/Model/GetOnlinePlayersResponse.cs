@@ -20,7 +20,8 @@ namespace Omukade.Cheyenne.Shell.Model
 {
     public class GetOnlinePlayersResponse
     {
-        public List<OnlinePlayerInfo> OnlinePlayers;
+        public List<OnlinePlayerInfo>? OnlinePlayers;
+        public int PlayerCount;
 
         public record struct OnlinePlayerInfo
         {

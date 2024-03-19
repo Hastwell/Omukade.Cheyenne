@@ -212,8 +212,8 @@ namespace Omukade.Cheyenne
                     case GetCurrentGamesRequest:
                         ProcessConsoleGetGamesMessage(controller);
                         break;
-                    case GetOnlinePlayersRequest:
-                        ProcessConsoleGetOnlinePlayersMessage(controller);
+                    case GetOnlinePlayersRequest gopr:
+                        ProcessConsoleGetOnlinePlayersMessage(controller, gopr);
                         break;
                     case DumpGameStateRequest dgsr:
                         if(controller.GetType() == typeof(DebugClientConnection))
@@ -257,10 +257,15 @@ namespace Omukade.Cheyenne
             }
         }
 
-        private static void ProcessConsoleGetOnlinePlayersMessage(IClientConnection controller)
+        private static void ProcessConsoleGetOnlinePlayersMessage(IClientConnection controller, GetOnlinePlayersRequest request)
         {
-            GetOnlinePlayersResponse allOnlinePlayerData = new GetOnlinePlayersResponse
-            { OnlinePlayers = serverCore.UserMetadata.Values.Select(um => new GetOnlinePlayersResponse.OnlinePlayerInfo { DisplayName = um.PlayerDisplayName, PlayerId = um.PlayerId, CurrentGameId = um.CurrentGame?.matchId }).ToList() };
+            GetOnlinePlayersResponse allOnlinePlayerData = new GetOnlinePlayersResponse();
+            allOnlinePlayerData.PlayerCount = serverCore.UserMetadata.Count;
+
+            if(!request.PlayerCountOnly)
+            {
+                allOnlinePlayerData.OnlinePlayers = serverCore.UserMetadata.Values.Select(um => new GetOnlinePlayersResponse.OnlinePlayerInfo { DisplayName = um.PlayerDisplayName, PlayerId = um.PlayerId, CurrentGameId = um.CurrentGame?.matchId }).ToList();
+            }
             controller.SendMessageEnquued_EXPERIMENTAL(allOnlinePlayerData);
         }
 

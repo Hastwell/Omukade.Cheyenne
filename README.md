@@ -79,6 +79,13 @@ Usually, AutoPAR will be able to fetch the game executable and use it to run the
 * Windows, Linux: Copy the TCGL assemblies (DLL files) from your TCGL install directory (`C:\Install\Folder\Pokémon Trading Card Game Live\Pokemon TCG Live_Data\Managed`) to the folder `autopar` under the server's directory.
   `autopar-search-folder` can be used to set any other name or location for this directory if prefered. *You must manually update this folder whenever the game updates!*
 
+## API
+The server includes an API to retrieve basic information about the server and its players. The API is reachable via HTTP on the server's main port (10850).
+
+Currently, these endpoints are:
+* `GET /api/v1/players => {"count":123}`
+* `GET /api/v1/players?names=true => {"count":123, "players":["Foo","Bar"]}`
+
 ## Compiling
 
 ### Rainier Dependencies with AutoPAR
