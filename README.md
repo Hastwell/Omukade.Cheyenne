@@ -83,7 +83,7 @@ Usually, AutoPAR will be able to fetch the game executable and use it to run the
 
 ### Rainier Dependencies with AutoPAR
 Before building this project, you'll need to run ManualPAR (part of the [Procedual Assembly Rewriter](https://github.com/Hastwell/Omukade.ProcedualAssemblyRewriter)) against the TCGL assemblies to produce a version
-with public members that can be accessed by this tool.
+with public members that can be accessed by this tool. Use arguments `--fetch-update --rainier-specific`.
 
 These assemblies need to be located in:
 ```
