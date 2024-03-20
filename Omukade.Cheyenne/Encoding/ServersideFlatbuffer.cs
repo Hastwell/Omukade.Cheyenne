@@ -46,6 +46,8 @@ namespace Omukade.Cheyenne.Encoding
         public static ClientNetworking.Models.GameServer.GameMessage DecodeGameMessage(ByteBuffer bb)
         {
             com.pokemon.studio.contracts.client_gameserver.GameMessage modelMessage = DecodeCommon<com.pokemon.studio.contracts.client_gameserver.GameMessage>(bb);
+
+            // Metadata is unused by Cheyenne; don't bother decoding it.
             return new ClientNetworking.Models.GameServer.GameMessage { gameId = modelMessage.GameId, message = modelMessage.GetMessageBytes()?.ToArray() };
         }
         public static ClientNetworking.Models.Matchmaking.ProposeDirectMatch DecodeProposeDirectMatch(ByteBuffer bb)

@@ -14,7 +14,7 @@ namespace Omukade.Cheyenne.Encoding
             {
                 serializer.Serialize(writer, obj);
             }
-
+            ms.Position = 0;
             using(StreamReader reader = new StreamReader(ms))
             {
                 return (T) serializer.Deserialize(reader, typeof(T));
