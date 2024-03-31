@@ -433,4 +433,80 @@ namespace Omukade.Cheyenne.Patching
             __instance.settings.ContractResolver = resolver;
         }
     }
+
+    /// <summary>
+    /// OfflineAdapter: when a TimeoutForceQuit is sent during an ongoing operation, the message is rejected instead of being forwarded to the ongoing game.
+    /// Patch OfflineAdaper's check so it always allows TimeoutForceQuit messsages.
+    /// </summary>
+    [HarmonyPatch(typeof(OfflineAdapter), nameof(OfflineAdapter.CreateOperation))]
+    public static class OfflineAdapter_CreateOperation_AllowsTimeoutMessages
+    {
+        enum PatchState
+        {
+            Searching,
+            ReplaceLoadEnum,
+            ReplaceIfCondition,
+            Done,
+        }
+
+        [HarmonyPatch, HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> Transpile(IEnumerable<CodeInstruction> instructions)
+        {
+            List<CodeInstruction> newInstructions = new List<CodeInstruction>();
+
+            PatchState state = PatchState.Searching;
+            FieldInfo playerOperationTypeField = typeof(PlayerOperation).GetField(nameof(PlayerOperation.operationType))!;
+            MethodInfo isEndOperationMethod = typeof(OfflineAdapter_CreateOperation_AllowsTimeoutMessages).GetMethod(nameof(IsEndOperation))!;
+
+            foreach (CodeInstruction instruction in instructions)
+            {
+                switch(state)
+                {
+                    case PatchState.Searching:
+                        newInstructions.Add(instruction);
+
+                        if(instruction.LoadsField(playerOperationTypeField))
+                        {
+                            state = PatchState.ReplaceLoadEnum;
+                        }
+                        break;
+                    case PatchState.ReplaceLoadEnum:
+                        if(instruction.opcode == OpCodes.Ldc_I4_8)
+                        {
+                            newInstructions.Add(new CodeInstruction(OpCodes.Call, isEndOperationMethod));
+                            state = PatchState.ReplaceIfCondition;
+                        }
+                        else
+                        {
+                            throw new ArgumentException("RuntimeIlPatcher: AllowTimeoutMessages patch failed - method has changed at ReplaceLoadEnum");
+                        }
+
+                        break;
+                    case PatchState.ReplaceIfCondition:
+                        if(instruction.opcode == OpCodes.Beq_S)
+                        {
+                            newInstructions.Add(new CodeInstruction(OpCodes.Brtrue_S, instruction.operand));
+                            state = PatchState.Done;
+                        }
+                        else
+                        {
+                            throw new ArgumentException("RuntimeIlPatcher: AllowTimeoutMessages patch failed - method has changed at ReplaceIfCondition");
+                        }
+                        break;
+                    case PatchState.Done:
+                        newInstructions.Add(instruction);
+                        break;
+                }
+            }
+
+            if(state != PatchState.Done)
+            {
+                throw new ArgumentException("RuntimeIlPatcher: AllowTimeoutMessages patch failed - method has changed; reached end-of-method without finishing patch.");
+            }
+
+            return newInstructions;
+        }
+
+        public static bool IsEndOperation(OperationType operationType) => operationType == OperationType.End || operationType == OperationType.TimeoutForceQuit;
+    }
 }
