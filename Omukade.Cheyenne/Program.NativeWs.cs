@@ -287,13 +287,25 @@ namespace Omukade.Cheyenne
         static void ProcessConsoleGetGamesMessage(IClientConnection controller)
         {
             GetCurrentGamesResponse response = new GetCurrentGamesResponse();
-            response.ongoingGames = serverCore.ActiveGamesById.Values.Select(game => new GetCurrentGamesResponse.GameSummary
+            response.ongoingGames = serverCore.ActiveGamesById.Values.Select(game =>
             {
-                GameId = game.matchId,
-                Player1 = game.playerInfos[0].playerName,
-                Player2 = game.playerInfos[1].playerName,
-                PrizeCountPlayer1 = game.CurrentOperation?.workingBoard?.p1Prize?.Count ?? -1,
-                PrizeCountPlayer2 = game.CurrentOperation?.workingBoard?.p2Prize?.Count ?? -1,
+                int p1PrizeCount = -1;
+                int p2PrizeCount = -1;
+
+                if (game.CurrentOperation?.workingBoard != null)
+                {
+                    p1PrizeCount = game.CurrentOperation.workingBoard.p1Prize.Where(card => card != null).Count();
+                    p2PrizeCount = game.CurrentOperation.workingBoard.p2Prize.Where(card => card != null).Count();
+                }
+
+                return new GetCurrentGamesResponse.GameSummary
+                {
+                    GameId = game.matchId,
+                    Player1 = game.playerInfos[0].playerName,
+                    Player2 = game.playerInfos[1].playerName,
+                    PrizeCountPlayer1 = p1PrizeCount,
+                    PrizeCountPlayer2 = p2PrizeCount,
+                };
             }).ToList();
 
             controller.SendMessageEnquued_EXPERIMENTAL(response);
