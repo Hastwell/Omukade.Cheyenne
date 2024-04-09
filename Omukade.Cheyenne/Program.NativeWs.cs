@@ -43,6 +43,9 @@ namespace Omukade.Cheyenne
         const bool EnableHttps = false;
         const bool EnableHttp = true;
 
+        static internal string AssemblyVersionMatchLogic;
+        static internal string ServerVersionString;
+
         /// <summary>
         /// Sets the HTTPS certificate to use when <see cref="EnableHttps"/> is enabled.
         /// </summary>
@@ -61,6 +64,9 @@ namespace Omukade.Cheyenne
             }
 
             continueRunningWsServer = true;
+
+            AssemblyVersionMatchLogic = ((AssemblyInformationalVersionAttribute)typeof(MatchLogic.CardSource).Assembly.GetCustomAttribute(typeof(AssemblyInformationalVersionAttribute)))?.InformationalVersion ?? "[unknown gamelogic version]";
+            ServerVersionString = $"Cheyenne 1.1.0 (ML {AssemblyVersionMatchLogic})";
 
             // Prepare controller
             StompController.ClientConnected = new Func<IClientConnection, Task>(Stomp_NewConnection);

@@ -66,13 +66,6 @@ namespace Omukade.Cheyenne.Tests
             }
         }
 
-        static BasicGameTestsFullStack()
-        {
-            Omukade.Cheyenne.Patching.MatchOperationGetRandomSeedIsDeterministic.InjectRngPatchAtAll = true;
-            Program.InitAutoPar();
-            GameServerCore.PatchRainier();
-        }
-
         GameServerCore gsc;
         DebugClientConnection p1connection;
         DebugClientConnection p2connection;

@@ -31,6 +31,8 @@ using SharedLogicUtils.DataTypes;
 using SharedLogicUtils.source.Services.Query.Contexts;
 using SharedLogicUtils.source.Services.Query.Responses;
 using SharedSDKUtils;
+using Omukade.Cheyenne.Encoding;
+using Omukade.Cheyenne.Matchmaking;
 
 namespace Omukade.Cheyenne
 {
@@ -74,7 +76,7 @@ namespace Omukade.Cheyenne
         internal Dictionary<string, PlayerMetadata> UserMetadata = new Dictionary<string, PlayerMetadata>(2);
 
         internal Dictionary<string, GameStateOmukade> ActiveGamesById = new Dictionary<string, GameStateOmukade>(10);
-        Queue<string> PlayersInQueue = new Queue<string>(2);
+        Dictionary<uint, BasicMatchmakingSwimlane> MatchmakingSwimlanes;
 
         private ImplementedExpandedCardsV1 expandedImplementedCards_ChecksumMatchesResponse;
         private ImplementedExpandedCardsV1 expandedImplementedCards_FullDataResponse;
@@ -103,6 +105,18 @@ namespace Omukade.Cheyenne
                 ImplementedCardNames = implementedCardNames
             };
             this.expandedImplementedCards_ChecksumMatchesResponse = new ImplementedExpandedCardsV1 { Checksum = this.expandedImplementedCards_FullDataResponse.Checksum };
+
+            BasicMatchmakingSwimlane standardSwimlane = new(GameplayType.Casual, GameMode.Standard, SwimlaneCompletedMatchMakingCallback);
+            BasicMatchmakingSwimlane expandedSwimlane = new(GameplayType.Casual, GameMode.Expanded, SwimlaneCompletedMatchMakingCallback);
+            MatchmakingSwimlanes = new(2)
+            {
+                { BasicMatchmakingSwimlane.GetFormatKey(GameplayType.Casual, GameMode.Standard), standardSwimlane },
+                { BasicMatchmakingSwimlane.GetFormatKey(GameplayType.Casual, GameMode.Expanded), expandedSwimlane },
+            };
+        }
+        private void SwimlaneCompletedMatchMakingCallback(IMatchmakingSwimlane swimlane, PlayerMetadata player1, PlayerMetadata player2)
+        {
+            this.StartGameBetweenTwoPlayers(player1, player2);
         }
 
         public static void PatchRainier()
@@ -231,15 +245,7 @@ namespace Omukade.Cheyenne
             }
 
             // OfflineAdapter::ReceiveOperation
-            ServerMessage? smg;
-            using (MemoryStream ms = new MemoryStream(gm.message))
-            {
-                using StreamReader reader = new StreamReader(ms, System.Text.Encoding.UTF8);
-                using JsonTextReader jtr = new JsonTextReader(reader);
-                JsonSerializer jsr = new JsonSerializer();
-                smg = jsr.Deserialize<ServerMessage>(jtr);
-            }
-
+            ServerMessage? smg = FasterJson.FastDeserializeFromBytes<ServerMessage>(gm.message);
             if (smg == null)
             {
                 throw new ArgumentNullException("GameMessage's SMG is null");
@@ -313,14 +319,25 @@ namespace Omukade.Cheyenne
 
         public void HandleRainerMessage(PlayerMetadata player, object message)
         {
-            if (message is BeginMatchmaking)
+            if (message is BeginMatchmaking bm)
             {
                 EnsurePlayerDataForMatch(player);
-                PlayersInQueue.Enqueue(player.PlayerId!);
+                MatchmakingContext mmc = FasterJson.FastDeserializeFromBytes<MatchmakingContext>(bm.context);
 
-                if (PlayersInQueue.Count >= 2)
+                if(mmc == null)
                 {
-                    StartGameBetweenTwoPlayers(UserMetadata[PlayersInQueue.Dequeue()], UserMetadata[PlayersInQueue.Dequeue()]);
+                    throw new ArgumentNullException("Tried to begin matchmaking with a null " + nameof(MatchmakingContext));
+                }
+
+                uint swimlaneKey = BasicMatchmakingSwimlane.GetFormatKey(GameplayType.Casual, mmc.gameMode);
+
+                if(this.MatchmakingSwimlanes.TryGetValue(swimlaneKey, out BasicMatchmakingSwimlane queueToUse))
+                {
+                    queueToUse.EnqueuePlayer(player);
+                }
+                else
+                {
+                    throw new ArgumentOutOfRangeException($"Tried to begin matching with a gamemode that isn't supported - {mmc.gameMode}");
                 }
             }
             else if (message is CancelMatchmaking cm)
@@ -423,18 +440,15 @@ namespace Omukade.Cheyenne
             }
         }
 
-        private void RemovePlayerFromAllMatchmaking(PlayerMetadata playerData, bool skipCheckingIfPlayerIsInQueue = false)
+        private void RemovePlayerFromAllMatchmaking(PlayerMetadata playerData)
         {
             string? concernedPlayerId = playerData.PlayerId;
             if (concernedPlayerId == null) return;
 
-            if (!skipCheckingIfPlayerIsInQueue && !PlayersInQueue.Contains(concernedPlayerId))
+            foreach (BasicMatchmakingSwimlane swimlane in this.MatchmakingSwimlanes.Values)
             {
-                return;
+                swimlane.RemovePlayerFromMatchmaking(playerData);
             }
-
-            PlayersInQueue = new Queue<string>(PlayersInQueue.Where(piq => piq != concernedPlayerId));
-
             foreach (PlayerMetadata pmd in UserMetadata.Values)
             {
                 // Cancel players that received a match from this player
@@ -528,7 +542,7 @@ namespace Omukade.Cheyenne
             gameState.playerInfos[PLAYER_ONE].playerName = playerOneMetadata.PlayerDisplayName;
             gameState.playerInfos[PLAYER_ONE].playerID = playerOneMetadata.PlayerId;
             gameState.playerInfos[PLAYER_ONE].sentPlayerInfo = true;
-            gameState.playerInfos[PLAYER_ONE].settings = new PlayerSettings { gameMode = GameMode.Standard, gameplayType = GameplayType.Ranked, useAutoSelect = false, useMatchTimer = false, useOperationTimer = false, matchMode = MatchMode.Standard, matchTime = 1500f };
+            gameState.playerInfos[PLAYER_ONE].settings = new PlayerSettings { gameMode = GameMode.Standard, gameplayType = GameplayType.Friend, useAutoSelect = false, useMatchTimer = false, useOperationTimer = false, matchMode = MatchMode.Standard, matchTime = 1500f };
             gameState.playerInfos[PLAYER_ONE].settings.name = playerOneMetadata.PlayerDisplayName;
             gameState.playerInfos[PLAYER_ONE].settings.outfit = playerOneMetadata.PlayerOutfit;
             DeckInfo.ImportMetadata(ref gameState.playerInfos[PLAYER_ONE].settings.deckInfo, playerOneMetadata.CurrentDeck!.Value.metadata, e => throw new Exception($"Error parsing deck for {playerOneMetadata.PlayerDisplayName}: {e}"));
@@ -538,7 +552,7 @@ namespace Omukade.Cheyenne
             gameState.playerInfos[PLAYER_TWO].playerName = playerTwoMetadata.PlayerDisplayName;
             gameState.playerInfos[PLAYER_TWO].playerID = playerTwoMetadata.PlayerId;
             gameState.playerInfos[PLAYER_TWO].sentPlayerInfo = true;
-            gameState.playerInfos[PLAYER_TWO].settings = new PlayerSettings { gameMode = GameMode.Standard, gameplayType = GameplayType.Ranked, useAutoSelect = false, useMatchTimer = false, useOperationTimer = false, matchMode = MatchMode.Standard, matchTime = 1500f };
+            gameState.playerInfos[PLAYER_TWO].settings = new PlayerSettings { gameMode = GameMode.Standard, gameplayType = GameplayType.Friend, useAutoSelect = false, useMatchTimer = false, useOperationTimer = false, matchMode = MatchMode.Standard, matchTime = 1500f };
             gameState.playerInfos[PLAYER_TWO].settings.outfit = playerTwoMetadata.PlayerOutfit;
             DeckInfo.ImportMetadata(ref gameState.playerInfos[PLAYER_TWO].settings.deckInfo, playerTwoMetadata.CurrentDeck!.Value.metadata, e => throw new Exception($"Error parsing deck for {playerTwoMetadata.PlayerDisplayName}: {e}"));
             gameState.playerInfos[PLAYER_TWO].settings.name = playerTwoMetadata.PlayerDisplayName;
@@ -580,9 +594,6 @@ namespace Omukade.Cheyenne
             {
                 PlayerMetadata currentPlayerMetadata = currentPlayerInfo.playerID == playerOneMetadata.PlayerId ? playerOneMetadata : playerTwoMetadata;
                 SendPacketToClient(currentPlayerMetadata, new JoinGame(txid: default, mmToken: default, region: UserMetadata[currentPlayerInfo.playerID].PlayerCurrentRegion, ticket: gameState.matchId));
-
-                // Sent by official servers, but I have no idea what it does, and I don't think the client even listens to these messages.
-                SendPacketToClient(currentPlayerMetadata, new QueryMessage { queryId = "set-enter-match" });
 
                 MatchCreated matchCreated = new MatchCreated()
                 {

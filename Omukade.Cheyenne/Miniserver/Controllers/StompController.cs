@@ -203,7 +203,8 @@ namespace Omukade.Cheyenne.Miniserver.Controllers
         {
             if (HttpContext.WebSockets.IsWebSocketRequest)
             {
-                Response.Headers["Omukade"] = "Cheyenne w/ Helens WS Logic";
+                Response.Headers["Omukade"] = Program.ServerVersionString;
+                Response.Headers["X-Omukade-MatchLogicVersion"] = Program.AssemblyVersionMatchLogic;
 
                 using (ws = await HttpContext.WebSockets.AcceptWebSocketAsync().ConfigureAwait(continueOnCapturedContext: false))
                 {
