@@ -34,6 +34,7 @@ using System.Security.Cryptography.X509Certificates;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using Omukade.Cheyenne.Encoding;
+using MatchLogic;
 
 namespace Omukade.Cheyenne
 {
@@ -292,14 +293,16 @@ namespace Omukade.Cheyenne
 
         static void ProcessConsoleGetGamesMessage(IClientConnection controller)
         {
+            bool PrizeNotNullCritertion(CardEntity entity) => entity != null;
+
             GetCurrentGamesResponse response = new GetCurrentGamesResponse();
             response.ongoingGames = serverCore.ActiveGamesById.Values.Select(game => new GetCurrentGamesResponse.GameSummary
             {
                 GameId = game.matchId,
                 Player1 = game.playerInfos[0].playerName,
                 Player2 = game.playerInfos[1].playerName,
-                PrizeCountPlayer1 = game.CurrentOperation?.workingBoard?.p1Prize?.Count ?? -1,
-                PrizeCountPlayer2 = game.CurrentOperation?.workingBoard?.p2Prize?.Count ?? -1,
+                PrizeCountPlayer1 = game.CurrentOperation?.workingBoard?.p1Prize?.Count(PrizeNotNullCritertion) ?? -1,
+                PrizeCountPlayer2 = game.CurrentOperation?.workingBoard?.p2Prize?.Count(PrizeNotNullCritertion) ?? -1,
             }).ToList();
 
             controller.SendMessageEnquued_EXPERIMENTAL(response);
