@@ -70,7 +70,13 @@ namespace Omukade.Cheyenne
         [JsonProperty(PropertyName = "run-as-daemon")]
         public bool RunAsDaemon = false;
 
+        [JsonProperty(PropertyName = "enable-game-timers")]
+        public bool EnableGameTimers = false;
+
         [JsonProperty(PropertyName = "debug-enable-deterministic-decklist-preperation")]
         public bool DebugEnableDeterministicDecklistPreperation = false;
+
+        [JsonProperty(PropertyName = "debug-prizes-per-player")]
+        public int? DebugPrizesPerPlayer = null;
     }
 }

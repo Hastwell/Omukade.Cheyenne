@@ -542,7 +542,7 @@ namespace Omukade.Cheyenne
             gameState.playerInfos[PLAYER_ONE].playerName = playerOneMetadata.PlayerDisplayName;
             gameState.playerInfos[PLAYER_ONE].playerID = playerOneMetadata.PlayerId;
             gameState.playerInfos[PLAYER_ONE].sentPlayerInfo = true;
-            gameState.playerInfos[PLAYER_ONE].settings = new PlayerSettings { gameMode = GameMode.Standard, gameplayType = GameplayType.Friend, useAutoSelect = false, useMatchTimer = false, useOperationTimer = false, matchMode = MatchMode.Standard, matchTime = 1500f };
+            gameState.playerInfos[PLAYER_ONE].settings = new PlayerSettings { gameMode = GameMode.Standard, gameplayType = GameplayType.Friend, useAutoSelect = false, useMatchTimer = config.EnableGameTimers, useOperationTimer = config.EnableGameTimers, matchMode = MatchMode.Standard, matchTime = 1500f };
             gameState.playerInfos[PLAYER_ONE].settings.name = playerOneMetadata.PlayerDisplayName;
             gameState.playerInfos[PLAYER_ONE].settings.outfit = playerOneMetadata.PlayerOutfit;
             DeckInfo.ImportMetadata(ref gameState.playerInfos[PLAYER_ONE].settings.deckInfo, playerOneMetadata.CurrentDeck!.Value.metadata, e => throw new Exception($"Error parsing deck for {playerOneMetadata.PlayerDisplayName}: {e}"));
@@ -552,7 +552,7 @@ namespace Omukade.Cheyenne
             gameState.playerInfos[PLAYER_TWO].playerName = playerTwoMetadata.PlayerDisplayName;
             gameState.playerInfos[PLAYER_TWO].playerID = playerTwoMetadata.PlayerId;
             gameState.playerInfos[PLAYER_TWO].sentPlayerInfo = true;
-            gameState.playerInfos[PLAYER_TWO].settings = new PlayerSettings { gameMode = GameMode.Standard, gameplayType = GameplayType.Friend, useAutoSelect = false, useMatchTimer = false, useOperationTimer = false, matchMode = MatchMode.Standard, matchTime = 1500f };
+            gameState.playerInfos[PLAYER_TWO].settings = new PlayerSettings { gameMode = GameMode.Standard, gameplayType = GameplayType.Friend, useAutoSelect = false, useMatchTimer = config.EnableGameTimers, useOperationTimer = config.EnableGameTimers, matchMode = MatchMode.Standard, matchTime = 1500f };
             gameState.playerInfos[PLAYER_TWO].settings.outfit = playerTwoMetadata.PlayerOutfit;
             DeckInfo.ImportMetadata(ref gameState.playerInfos[PLAYER_TWO].settings.deckInfo, playerTwoMetadata.CurrentDeck!.Value.metadata, e => throw new Exception($"Error parsing deck for {playerTwoMetadata.PlayerDisplayName}: {e}"));
             gameState.playerInfos[PLAYER_TWO].settings.name = playerTwoMetadata.PlayerDisplayName;
@@ -581,7 +581,7 @@ namespace Omukade.Cheyenne
 
             gameState.playerInfos[PLAYER_TWO].playerID, gameState.playerInfos[PLAYER_TWO].playerName,
             deckListP2.ToArray(), 1500f, p2UseMatchTimer: gameState.playerInfos[PLAYER_TWO].settings.useMatchTimer, p2UseOperationTimer: gameState.playerInfos[PLAYER_TWO].settings.useOperationTimer, gameState.playerInfos[PLAYER_TWO].settings.useAutoSelect,
-            MatchMode.Standard, prizeCount: 6, debug: gameState.CanUseDebug,
+            MatchMode.Standard, prizeCount: config.DebugPrizesPerPlayer ?? 6, debug: gameState.CanUseDebug,
             featureFlags: FeatureFlags);
 
             bootstrapOperation.QueuePlayerOperation();
