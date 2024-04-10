@@ -56,6 +56,7 @@ The default settings are usually sufficient to start a server without additional
 * discord-error-webhook-enable - Enables support for notifing server operators of errors via a Discord webhook. Default is `false`.
 * discord-error-webhook-url - The URL to use for the Discord error webhook. **Required if** discord-error-webhook-enable is `true`.
 * run-as-daemon - Starts the server headless without user interactivity or commands, typically used for running as a service (eg, by systemd). Starting with the `--daemon` argument will always enable this mode.
+* enable-game-timers - **BETA** - games will have a timer enabled. Defaults to false. _The server does not perform any enforcement of timers; misbeahving and malicious clients can easily bypass them even if enabled._
 
 #### config.json - Advanced Settings
 These should generally not be changed from their defaults; doing so may have significant undesirable side effects.
@@ -64,6 +65,7 @@ These should generally not be changed from their defaults; doing so may have sig
 * disable-player-order-randomization - Disables the randomization of which player is considered P1 vs P2 when a game starts. P1 and P2 instead become eg, the first and second player to queue. P1 will always call the opening coinflip. Default is `false`.
 * debug-fixed-rng-seed - Uses a fixed RNG seed for all games, ensuring all coinflips/deckshuffles/other randomization is the same each time. Default is `false`.
 * enable-reporting-all-implemented-cards - Whether to enable reporting all implemented expanded cards to clients. Default is `true`.
+* debug-prizes-per-player - Changes the starting number of prizes. Default: 6.
 
 ### Omukade Shared Data Directory
 The various Omukade projects all share common TCGL data (eg, game binaries, card and rule definitions) to avoid duplication of data, and reduce maintainance requirements that would otherwise occur if each Omukade program used its own copy of TCGL data. This directory is located:
