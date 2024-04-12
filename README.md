@@ -57,6 +57,7 @@ The default settings are usually sufficient to start a server without additional
 * discord-error-webhook-url - The URL to use for the Discord error webhook. **Required if** discord-error-webhook-enable is `true`.
 * run-as-daemon - Starts the server headless without user interactivity or commands, typically used for running as a service (eg, by systemd). Starting with the `--daemon` argument will always enable this mode.
 * enable-game-timers - **BETA** - games will have a timer enabled. Defaults to false. _The server does not perform any enforcement of timers; misbeahving and malicious clients can easily bypass them even if enabled._
+* enable-auto-select - **BETA** - games will enable auto select. Defaults to false. Just like the official server, for example, when there are only two Pokémon currently, Switch will operate auto.
 
 #### config.json - Advanced Settings
 These should generally not be changed from their defaults; doing so may have significant undesirable side effects.
