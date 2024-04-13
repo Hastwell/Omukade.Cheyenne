@@ -54,6 +54,7 @@
     <PackageReference Include="SharpZipLib" Version="1.4.2" />
     <PackageReference Include="Spectre.Console" Version="0.45.0" />
 	<PackageReference Include="Omukade.AutoPAR.BuildPipeline.Rainier" Version="1.0.9.1" />
+    <PackageReference Include="Omukade.RainierCardDefinitionFetcher" Version="1.0.14" />
   </ItemGroup>
 
   <ItemGroup>
