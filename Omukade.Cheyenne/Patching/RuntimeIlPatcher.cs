@@ -456,7 +456,7 @@ namespace Omukade.Cheyenne.Patching
 
             PatchState state = PatchState.Searching;
             FieldInfo playerOperationTypeField = typeof(PlayerOperation).GetField(nameof(PlayerOperation.operationType))!;
-            MethodInfo isEndOperationMethod = typeof(OfflineAdapter_CreateOperation_AllowsTimeoutMessages).GetMethod(nameof(IsEndOperation))!;
+            MethodInfo isQuitOperationMethod = typeof(OfflineAdapter_CreateOperation_AllowsTimeoutMessages).GetMethod(nameof(IsQuitOperation))!;
 
             foreach (CodeInstruction instruction in instructions)
             {
@@ -473,7 +473,7 @@ namespace Omukade.Cheyenne.Patching
                     case PatchState.ReplaceLoadEnum:
                         if(instruction.opcode == OpCodes.Ldc_I4_8)
                         {
-                            newInstructions.Add(new CodeInstruction(OpCodes.Call, isEndOperationMethod));
+                            newInstructions.Add(new CodeInstruction(OpCodes.Call, isQuitOperationMethod));
                             state = PatchState.ReplaceIfCondition;
                         }
                         else
@@ -507,6 +507,6 @@ namespace Omukade.Cheyenne.Patching
             return newInstructions;
         }
 
-        public static bool IsEndOperation(OperationType operationType) => operationType == OperationType.End || operationType == OperationType.TimeoutForceQuit;
+        public static bool IsQuitOperation(OperationType operationType) => operationType == OperationType.Quit || operationType == OperationType.TimeoutForceQuit;
     }
 }
