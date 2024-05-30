@@ -151,7 +151,7 @@ namespace Omukade.Cheyenne
 
             try
             {
-                Client client = Omukade.Tools.RainierCardDefinitionFetcher.Fetchers.PrepareClient(secrets);
+                IClient client = Omukade.Tools.RainierCardDefinitionFetcher.Fetchers.PrepareClient(secrets);
                 Omukade.Tools.RainierCardDefinitionFetcher.Fetchers.FetchAndSaveAllGamemodeData(client);
                 Omukade.Tools.RainierCardDefinitionFetcher.Fetchers.FetchAndSaveCardDefinitions(client);
                 Omukade.Tools.RainierCardDefinitionFetcher.Fetchers.FetchFeatureFlags(client);

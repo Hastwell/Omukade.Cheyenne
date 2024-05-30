@@ -32,10 +32,6 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<Reference Include="FlatBuffers.Core">
-			<HintPath>$(LOCALAPPDATA)\omukade\rainier-shared\rainier-client_PAR\FlatBuffers.Core.dll</HintPath>
-			<Private>True</Private>
-		</Reference>
 		<Reference Include="MatchLogic">
 			<HintPath>$(LOCALAPPDATA)\omukade\rainier-shared\rainier-client_PAR\MatchLogic.dll</HintPath>
 			<Private>True</Private>
@@ -55,6 +51,10 @@
 		<Reference Include="RainierClientSDK">
 			<HintPath>$(LOCALAPPDATA)\omukade\rainier-shared\rainier-client_PAR\MockPlatformSDK.dll</HintPath>
 			<Private>True</Private>
+		</Reference>
+		<Reference Include="Google.Flatbuffers">
+			<HintPath>$(LOCALAPPDATA)\omukade\rainier-shared\rainier-client_PAR\Google.Flatbuffers.dll</HintPath>
+			<Private>False</Private>
 		</Reference>
 	</ItemGroup>
 
